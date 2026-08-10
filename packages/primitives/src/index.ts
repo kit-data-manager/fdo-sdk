@@ -1,10 +1,10 @@
 type LocalID = `LOCAL/${string}`
 type PID = `${string}/${string}`
 
-type RecordValue = string |string[]
+type RecordValue = string | string[]
 type Attribute = [PID, RecordValue]
 
-interface Profile<Attributes extends ProfileAttributes> {
+interface ProfileDefinition<Attributes extends ProfileAttributes> {
     readonly pid: PID
 
     /**
@@ -17,7 +17,9 @@ type ProfileAttributes = {
     [key: string]: any
 }
 
-type AttributeToPID<P extends ProfileAttributes> = {-readonly [key in keyof P]-?: PID}
+type AttributeToPID<P extends ProfileAttributes> = {
+    -readonly [key in keyof P]-?: PID
+}
 
 interface Record {
     localID: LocalID
@@ -30,42 +32,38 @@ interface Record {
 
     add(record: Record): void
     add(attribute: Attribute): void
-    addReference(fromAttribute: PID, toAttribute: PID, toRecord: PID | LocalID | Record): void
-    addProfile<P extends Profile<ProfileAttributes>>(profile: P, attributes: P extends Profile<infer I> ? I : never): void
+    addReference(
+        fromAttribute: PID,
+        toAttribute: PID,
+        toRecord: PID | LocalID | Record,
+    ): void
+    addProfile<P extends ProfileDefinition<ProfileAttributes>>(
+        profile: P,
+        attributes: P extends ProfileDefinition<infer I> ? I : never,
+    ): void
 }
 
 const record: Record = {} as Record
 
-
-type HMCRecord = {
-    /**
-     * The description of is metadata for
-     */
-    isMetadataFor: RecordValue,
-
-    /**
-     * Has metadata description
-     */
-    hasMetadata: RecordValue,
-
-    /**
-     * Description for dateCreated
-     */
-    dateCreated?: RecordValue
+type HMCProfileAttributes = {
+    /** The name of the dataset described by this FDO */
+    datasetName: string
+    /** The authors of the work described by this FDO */
+    authors: string | string[]
+    /** Description for dateCreated */
+    dateCreated?: Date
 }
 
-const myProfile: Profile<HMCRecord> = {
+const HMCProfile: ProfileDefinition<HMCProfileAttributes> = {
     pid: "jfisodf/gkfpgfk",
     mapping: {
-        isMetadataFor: "21/21",
-        hasMetadata: "21/22",
-        dateCreated: "21/23"
-    }
+        datasetName: "some/pid1",
+        authors: "some/pid2",
+        dateCreated: "some/pid3",
+    },
 }
 
-record.addProfile(myProfile, {
-    hasMetadata: "fdsf",
-    isMetadataFor: "fdsf",
-    dateCreated: "fdf"
+record.addProfile(HMCProfile, {
+    datasetName: "My Dataset",
+    authors: ["orcid1", "orcid2"],
 })
-
