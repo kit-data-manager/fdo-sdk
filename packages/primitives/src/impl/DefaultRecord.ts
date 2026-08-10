@@ -85,6 +85,14 @@ export class DefaultRecord implements IFDORecord {
         return structuredClone(this.attributes)
     }
 
+    getReferences(): ReferenceDeclaration[] {
+        return structuredClone(this.references)
+    }
+
+    getProfiles(): IProfile<IProfileDefinition<ProfileAttributes>>[] {
+        return this.conformsToProfiles
+    }
+
     has(attribute: PID): boolean {
         return this.attributes.has(attribute)
     }
@@ -98,5 +106,9 @@ export class DefaultRecord implements IFDORecord {
         this.references = this.references.filter(
             (ref) => ref.fromAttribute !== from,
         )
+    }
+
+    remove(attribute: PID) {
+        this.attributes.delete(attribute)
     }
 }

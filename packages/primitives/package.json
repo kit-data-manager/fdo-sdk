@@ -3,7 +3,8 @@
     "version": "0.1.0",
     "description": "",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "vitest run",
+        "test:watch": "vitest",
         "build": "tsc --noEmit && tsdown"
     },
     "keywords": [],
@@ -11,8 +12,11 @@
     "license": "ISC",
     "type": "module",
     "devDependencies": {
+        "@types/node": "^26.2.0",
+        "@vitest/coverage-v8": "4.1.10",
         "tsdown": "^0.22.14",
-        "typescript": "^6.0.3"
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.10"
     },
     "exports": {
         ".": "./dist/index.mjs",

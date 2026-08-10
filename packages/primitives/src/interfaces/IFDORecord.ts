@@ -5,6 +5,7 @@ import type {
     PID,
     ProfileAttributes,
     RecordValue,
+    ReferenceDeclaration,
 } from "../types.js"
 import type { IProfile } from "./IProfile.js"
 
@@ -14,8 +15,11 @@ export interface IFDORecord {
 
     get(attribute: PID): RecordValue | undefined
     getAll(): Map<PID, RecordValue>
+    getReferences(): ReferenceDeclaration[]
+    getProfiles(): IProfile<IProfileDefinition<ProfileAttributes>>[]
     has(attribute: PID): boolean
     set(attribute: PID, value: RecordValue): void
+    remove(attribute: PID): void
 
     add(record: IFDORecord): void
     add(attribute: Attribute): void
