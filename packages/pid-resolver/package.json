@@ -1,0 +1,26 @@
+{
+    "name": "@fdo-sdk/pid-resolver",
+    "version": "0.1.0",
+    "description": "General-purpose PID resolution: load a profile from a PID",
+    "license": "Apache-2.0",
+    "type": "module",
+    "dependencies": {
+        "@fdo-sdk/primitives": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/node": "^26.2.0",
+        "@vitest/coverage-v8": "4.1.10",
+        "tsdown": "^0.22.14",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.10"
+    },
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "build": "tsc --noEmit && tsdown"
+    },
+    "exports": {
+        ".": "./dist/index.mjs",
+        "./package.json": "./package.json"
+    }
+}
