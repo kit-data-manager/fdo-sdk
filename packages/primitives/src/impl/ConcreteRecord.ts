@@ -1,4 +1,4 @@
-import type { IFDORecord, IProfileDefinition } from "../interfaces/index.js"
+import type { FDORecord, ProfileDefinition } from "../interfaces/index.js"
 import type {
     Attribute,
     LocalID,
@@ -8,16 +8,16 @@ import type {
     ReferenceDeclaration,
 } from "../types.js"
 import { toArray } from "../utils.js"
-import type { IProfile } from "../interfaces/IProfile.js"
+import type { Profile } from "../interfaces/Profile.js"
 
-export class DefaultRecord implements IFDORecord {
+export class ConcreteRecord implements FDORecord {
     readonly localID: LocalID
     readonly PID: PID | undefined
 
     private attributes: Map<PID, RecordValue> = new Map()
     private references: ReferenceDeclaration[] = []
-    private conformsToProfiles: IProfile<
-        IProfileDefinition<ProfileAttributes>
+    private conformsToProfiles: Profile<
+        ProfileDefinition<ProfileAttributes>
     >[] = []
 
     constructor(localID: LocalID, pid?: PID) {
@@ -25,9 +25,9 @@ export class DefaultRecord implements IFDORecord {
         this.PID = pid
     }
 
-    add(record: IFDORecord): void
+    add(record: FDORecord): void
     add(attribute: Attribute): void
-    add(record: IFDORecord | Attribute): void {
+    add(record: FDORecord | Attribute): void {
         if (Array.isArray(record)) {
             const recordMap = new Map([[record[0], record[1]]])
             this.addMap(recordMap)
@@ -50,9 +50,9 @@ export class DefaultRecord implements IFDORecord {
         }
     }
 
-    addProfile<P extends IProfile<IProfileDefinition<ProfileAttributes>>>(
+    addProfile<P extends Profile<ProfileDefinition<ProfileAttributes>>>(
         profile: P,
-        attributes: P extends IProfile<IProfileDefinition<infer I>> ? I : never,
+        attributes: P extends Profile<ProfileDefinition<infer I>> ? I : never,
     ): void {
         this.conformsToProfiles.push(profile)
         const mapped = profile.mapAttributeNamesToPIDs(attributes)
@@ -62,7 +62,7 @@ export class DefaultRecord implements IFDORecord {
     addReference(
         fromAttribute: PID,
         toAttribute: PID,
-        toRecord: PID | LocalID | IFDORecord,
+        toRecord: PID | LocalID | FDORecord,
     ): void {
         const target =
             typeof toRecord === "object"
@@ -89,7 +89,7 @@ export class DefaultRecord implements IFDORecord {
         return structuredClone(this.references)
     }
 
-    getProfiles(): IProfile<IProfileDefinition<ProfileAttributes>>[] {
+    getProfiles(): Profile<ProfileDefinition<ProfileAttributes>>[] {
         return this.conformsToProfiles
     }
 

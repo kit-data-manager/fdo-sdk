@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest"
-import type { IProfile } from "../src/interfaces/IProfile.js"
-import type { IProfileDefinition } from "../src/interfaces/IProfileDefinition.js"
+import type { Profile } from "../src/interfaces/Profile.js"
+import type { ProfileDefinition } from "../src/interfaces/ProfileDefinition.js"
 import type { ProfileAttributes } from "../src/types.js"
-import { DefaultProfile } from "../src/impl/index.js"
+import { ConcreteProfile } from "../src/impl/index.js"
 
 type HMCProfileAttributes = {
     datasetName: string
@@ -10,7 +10,7 @@ type HMCProfileAttributes = {
     dateCreated?: string
 }
 
-const def: IProfileDefinition<HMCProfileAttributes> = {
+const def: ProfileDefinition<HMCProfileAttributes> = {
     pid: "profile/pid",
     mapping: {
         datasetName: "some/pid1",
@@ -19,17 +19,17 @@ const def: IProfileDefinition<HMCProfileAttributes> = {
     },
 }
 
-describe("IProfile (via DefaultProfile)", () => {
+describe("Profile (via ConcreteProfile)", () => {
     it("exposes the definition via readonly def", () => {
-        const profile: IProfile<IProfileDefinition<HMCProfileAttributes>> =
-            new DefaultProfile(def)
+        const profile: Profile<ProfileDefinition<HMCProfileAttributes>> =
+            new ConcreteProfile(def)
         expect(profile.def).toBe(def)
         expect(profile.def.pid).toBe("profile/pid")
         expect(profile.def.mapping.datasetName).toBe("some/pid1")
     })
 
     it("maps a single string attribute name to its PID", () => {
-        const profile = new DefaultProfile(def)
+        const profile = new ConcreteProfile(def)
         const mapped = profile.mapAttributeNamesToPIDs({
             datasetName: "My Dataset",
             authors: "author1",
@@ -39,7 +39,7 @@ describe("IProfile (via DefaultProfile)", () => {
     })
 
     it("maps array-valued attributes", () => {
-        const profile = new DefaultProfile(def)
+        const profile = new ConcreteProfile(def)
         const mapped = profile.mapAttributeNamesToPIDs({
             datasetName: "DS",
             authors: ["a1", "a2"],
@@ -48,7 +48,7 @@ describe("IProfile (via DefaultProfile)", () => {
     })
 
     it("omits attributes that are not provided", () => {
-        const profile = new DefaultProfile(def)
+        const profile = new ConcreteProfile(def)
         const mapped = profile.mapAttributeNamesToPIDs({
             datasetName: "DS",
             authors: "a1",
@@ -58,7 +58,7 @@ describe("IProfile (via DefaultProfile)", () => {
     })
 
     it("returns a Map with the correct size when all attributes are provided", () => {
-        const profile = new DefaultProfile(def)
+        const profile = new ConcreteProfile(def)
         const mapped = profile.mapAttributeNamesToPIDs({
             datasetName: "DS",
             authors: ["a1", "a2"],
@@ -69,7 +69,7 @@ describe("IProfile (via DefaultProfile)", () => {
     })
 
     it("throws when an attribute has no mapping", () => {
-        const profile = new DefaultProfile(def)
+        const profile = new ConcreteProfile(def)
         const attrs = {
             datasetName: "DS",
             authors: "a1",

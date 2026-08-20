@@ -12,7 +12,7 @@ pnpm monorepo (`packages/*`). Only one package exists: `packages/primitives` (`@
 
 - TS is strict with `verbatimModuleSyntax`/`isolatedModules`: type-only imports MUST use `import type`.
 - Relative imports must end in `.js` even though files are `.ts` (node16/nodenext resolution), e.g. `../types.js`.
-- Public surface is `src/index.ts`. Interfaces are `I`-prefixed (`IFDORecord`); implementations are `Default`-prefixed classes in `src/impl/` and also exported without the prefix (`DefaultRecord as FDORecord`).
+- Public surface is `src/index.ts`. Interfaces have no prefix (`FDORecord`, `FDOGraph`, `Profile`, `ProfileDefinition`); implementations are `Concrete`-prefixed classes in `src/impl/` (`ConcreteRecord`, `ConcreteProfile`), except the graph implementation, which is named after its strategy (`MapGraph`).
 - Core types (`PID`, `LocalID`, `RecordValue`, ...) live in `src/types.ts`.
 
 ## Testing

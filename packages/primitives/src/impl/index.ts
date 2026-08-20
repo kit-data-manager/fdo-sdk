@@ -1,6 +1,3 @@
-export { DefaultRecord, DefaultRecord as FDORecord } from "./DefaultRecord.js"
-export {
-    DefaultProfile,
-    DefaultProfile as FDOProfile,
-} from "./DefaultProfile.js"
-export { DefaultGraph, DefaultGraph as FDOGraph } from "./DefaultGraph.js"
+export { ConcreteRecord } from "./ConcreteRecord.js"
+export { ConcreteProfile } from "./ConcreteProfile.js"
+export { MapGraph } from "./MapGraph.js"

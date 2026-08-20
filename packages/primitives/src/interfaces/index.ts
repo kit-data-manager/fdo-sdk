@@ -1,4 +1,3 @@
-export * from "./IFDORecord.js"
-export * from "./IFDOGraph.js"
-export * from "./IProfileDefinition.js"
-export * from "./IProfile.js"
+export * from "./FDORecord.js"
+export * from "./FDOGraph.js"
+export * from "./ProfileDefinition.js"

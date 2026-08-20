@@ -1,7 +1,7 @@
-import type { IProfileDefinition } from "./interfaces/index.js"
-import { FDOProfile, FDORecord } from "./impl/index.js"
+import type { ProfileDefinition } from "./interfaces/index.js"
+import { ConcreteProfile, ConcreteRecord } from "./impl/index.js"
 
-const record = new FDORecord("LOCAL/1")
+const record = new ConcreteRecord("LOCAL/1")
 
 type HMCProfileAttributes = {
     /** The name of the dataset described by this FDO */
@@ -12,7 +12,7 @@ type HMCProfileAttributes = {
     dateCreated?: string
 }
 
-const HMCProfileDefinition: IProfileDefinition<HMCProfileAttributes> = {
+const HMCProfileDefinition: ProfileDefinition<HMCProfileAttributes> = {
     pid: "jfisodf/gkfpgfk",
     mapping: {
         datasetName: "some/pid1",
@@ -21,7 +21,7 @@ const HMCProfileDefinition: IProfileDefinition<HMCProfileAttributes> = {
     },
 }
 
-const HMCProfile = new FDOProfile(HMCProfileDefinition)
+const HMCProfile = new ConcreteProfile(HMCProfileDefinition)
 
 record.addProfile(HMCProfile, {
     datasetName: "My Dataset",

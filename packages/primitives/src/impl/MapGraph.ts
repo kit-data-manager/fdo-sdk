@@ -1,31 +1,31 @@
-import type { IFDORecord, IFDOGraph } from "../interfaces/index.js"
+import type { FDORecord, FDOGraph } from "../interfaces/index.js"
 import type { LocalID, PID } from "../types.js"
 
-export class DefaultGraph implements IFDOGraph {
-    private recordsByLocalID = new Map<LocalID, IFDORecord>()
+export class MapGraph implements FDOGraph {
+    private recordsByLocalID = new Map<LocalID, FDORecord>()
     private pids = new Map<PID, LocalID>()
 
-    addRecord(record: IFDORecord): void {
+    addRecord(record: FDORecord): void {
         const previous = this.recordsByLocalID.get(record.localID)
         if (previous?.PID) this.pids.delete(previous.PID)
         this.recordsByLocalID.set(record.localID, record)
         if (record.PID) this.pids.set(record.PID, record.localID)
     }
 
-    findRecord(predicate: (r: IFDORecord) => boolean): IFDORecord | undefined {
+    findRecord(predicate: (r: FDORecord) => boolean): FDORecord | undefined {
         for (const record of this.recordsByLocalID.values()) {
             if (predicate(record)) return record
         }
         return undefined
     }
 
-    getRecord(id: PID | LocalID): IFDORecord | undefined {
+    getRecord(id: PID | LocalID): FDORecord | undefined {
         const pidOwner = this.pids.get(id as PID)
         if (pidOwner) return this.recordsByLocalID.get(pidOwner)
         return this.recordsByLocalID.get(id as LocalID)
     }
 
-    getRecords(): IFDORecord[] {
+    getRecords(): FDORecord[] {
         return [...this.recordsByLocalID.values()]
     }
 

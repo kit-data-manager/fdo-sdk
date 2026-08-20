@@ -1,10 +1,10 @@
-import type { IProfileDefinition } from "../interfaces/index.js"
-import type { IProfile } from "../interfaces/IProfile.js"
+import type { ProfileDefinition } from "../interfaces/index.js"
+import type { Profile } from "../interfaces/Profile.js"
 import type { PID, ProfileAttributes, RecordValue } from "../types.js"
 
-export class DefaultProfile<
-    D extends IProfileDefinition<ProfileAttributes>,
-> implements IProfile<D> {
+export class ConcreteProfile<
+    D extends ProfileDefinition<ProfileAttributes>,
+> implements Profile<D> {
     readonly def: D
 
     constructor(def: D) {
@@ -12,7 +12,7 @@ export class DefaultProfile<
     }
 
     mapAttributeNamesToPIDs(
-        attributes: D extends IProfileDefinition<infer A> ? A : never,
+        attributes: D extends ProfileDefinition<infer A> ? A : never,
     ): Map<PID, RecordValue> {
         const entries = Object.entries(attributes)
         const map = new Map<PID, RecordValue>()

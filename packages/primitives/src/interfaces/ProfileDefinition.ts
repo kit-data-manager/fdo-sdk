@@ -1,6 +1,6 @@
 import type { AttributeToPID, PID, ProfileAttributes } from "../types.js"
 
-export interface IProfileDefinition<Attributes extends ProfileAttributes> {
+export interface ProfileDefinition<Attributes extends ProfileAttributes> {
     readonly pid: PID
 
     /**
