@@ -1,0 +1,107 @@
+{
+    "creepExperiments": [
+        {
+            "id": "creep-exp-001",
+            "FDO_profile": [
+                "21.T11969/077fe9c54ed5ed26fa54",
+                "21.T11969/222fb86c0b3bece35729"
+            ],
+            "creator": ["https://orcid.org/0009-0005-2800-4833"],
+            "creatorAffiliation": ["https://ror.org/04cdgtt98"],
+            "dateCreated": "2026-06-22T16:38:31.467Z",
+            "dateModified": "2026-07-20T10:12:00.000Z",
+            "keyword": ["creep", "high-temperature", "nickel-alloy"],
+            "name": "Creep test of Inconel 718 at 650°C",
+            "description": "Stress rupture test of Inconel 718 under a sustained load of 200 MPa at 650 °C according to DIN EN ISO 204.",
+            "applicableStandard": ["DIN EN ISO 204:2023-10"],
+            "testID": "CC-2026-001",
+            "specifiedTemperature": "650",
+            "initialStress": "200",
+            "testDuration": "P120D",
+            "percentageCreepExtension": "0.042",
+            "SingleCrystalOrientation": "45",
+            "usesMaterial": ["21.T11969/d8169782b57c7a9e9f01"],
+            "dataResources": [
+                {
+                    "id": "creep-exp-001/raw-data.csv",
+                    "mimeType": "text/csv",
+                    "dataObjectLocation": [
+                        "https://data.example.org/creep-exp-001/raw-data.csv"
+                    ],
+                    "spdxLicense": ["https://spdx.org/licenses/CC-BY-4.0"],
+                    "checksum": [
+                        "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                    ]
+                },
+                {
+                    "id": "creep-exp-001/creep-curve.png",
+                    "mimeType": "image/png",
+                    "dataObjectLocation": [
+                        "https://data.example.org/creep-exp-001/creep-curve.png"
+                    ],
+                    "spdxLicense": ["https://spdx.org/licenses/CC-BY-4.0"],
+                    "checksum": [
+                        "sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+                    ]
+                },
+                {
+                    "id": "creep-exp-001/measurement-log.json",
+                    "mimeType": "application/json",
+                    "dataObjectLocation": [
+                        "https://data.example.org/creep-exp-001/measurement-log.json"
+                    ],
+                    "spdxLicense": ["https://spdx.org/licenses/CC-BY-4.0"],
+                    "checksum": [
+                        "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "creep-exp-002",
+            "FDO_profile": [
+                "21.T11969/077fe9c54ed5ed26fa54",
+                "21.T11969/222fb86c0b3bece35729"
+            ],
+            "creator": ["https://orcid.org/0009-0005-2800-4833"],
+            "creatorAffiliation": ["https://ror.org/04cdgtt98"],
+            "dateCreated": "2026-07-01T09:00:00.000Z",
+            "dateModified": "2026-07-30T16:45:00.000Z",
+            "keyword": ["creep", "steel", "CM247LC"],
+            "name": "Creep test of CM247LC at 850°C",
+            "description": "Creep test of the single-crystal superalloy CM247LC at 850 °C and 300 MPa.",
+            "applicableStandard": ["DIN EN ISO 204:2023-10"],
+            "testID": "CC-2026-002",
+            "specifiedTemperature": "850",
+            "initialStress": "300",
+            "testDuration": "P60D",
+            "percentageCreepExtension": "0.087",
+            "SingleCrystalOrientation": "0",
+            "usesMaterial": ["21.T11969/d8169782b57c7a9e9f01"],
+            "dataResources": [
+                {
+                    "id": "creep-exp-002/raw-data.csv",
+                    "mimeType": "text/csv",
+                    "dataObjectLocation": [
+                        "https://data.example.org/creep-exp-002/raw-data.csv"
+                    ],
+                    "spdxLicense": ["https://spdx.org/licenses/CC-BY-4.0"],
+                    "checksum": [
+                        "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+                    ]
+                },
+                {
+                    "id": "creep-exp-002/creep-curve.png",
+                    "mimeType": "image/png",
+                    "dataObjectLocation": [
+                        "https://data.example.org/creep-exp-002/creep-curve.png"
+                    ],
+                    "spdxLicense": ["https://spdx.org/licenses/CC-BY-4.0"],
+                    "checksum": [
+                        "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+                    ]
+                }
+            ]
+        }
+    ]
+}

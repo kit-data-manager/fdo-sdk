@@ -1,53 +1,75 @@
 import {
     BaseProfile,
-    creepExperimentAttributes,
     CreepExperimentProfile,
-    PublicationProfile,
-} from "./creepProfiles"
+    DataResourceProfile,
+    creepExperimentAttributes,
+} from "./generated/creepProfiles.js"
 import { createMapping } from "@fdo-sdk/primitives"
-import { FDORecord } from "@fdo-sdk/primitives"
-import { skip } from "@fdo-sdk/primitives"
-import { keep } from "@fdo-sdk/primitives"
+import type { FDORecord } from "@fdo-sdk/primitives"
 import { reference } from "@fdo-sdk/primitives"
+import { skip } from "@fdo-sdk/primitives"
+import experimentsData from "../assets/creep-experiments.json" with { type: "json" }
 
-const context = createMapping("TEST/mapping")
+type Experiment = (typeof experimentsData)["creepExperiments"][number]
+type DataFile = Experiment["dataResources"][number]
 
-function mapping(file: File) {
-    const record = context.newRecord(`LOCAL/${file.name}`)
+const context = createMapping("TEST/creep-experiments")
 
-    record.addProfile(BaseProfile, {
-        creator: "orcid...",
-        FDO_profile: BaseProfile.def.pid,
-        creatorAffiliation: "KIT",
-        dateCreated: "1.1.1970",
-        name: "Test Dataset",
+function addDataResource(record: FDORecord, file: DataFile) {
+    record.addProfile(DataResourceProfile, {
+        mimeType: file.mimeType,
+        dataObjectLocation: file.dataObjectLocation,
+        spdxLicense: file.spdxLicense,
+        checksum: file.checksum,
     })
-
-    record.addProfile(PublicationProfile, {
-        creator: keep(),
-        doi: "...",
-        dataCitePublicationType: "Thesis",
-        datePublished: "http://...",
-        publisher: "KIT Bib",
-    })
-
-    addCreepInfo(record, file)
 }
 
-function addCreepInfo(record: FDORecord, file: File) {
+function addCreepExperiment(record: FDORecord, experiment: Experiment) {
+    record.addProfile(BaseProfile, {
+        FDO_profile: experiment.FDO_profile,
+        creator: experiment.creator,
+        creatorAffiliation: experiment.creatorAffiliation,
+        dateCreated: experiment.dateCreated,
+        dateModified: experiment.dateModified,
+        keyword: experiment.keyword,
+        name: experiment.name,
+        description: experiment.description,
+    })
+
     record.addProfile(CreepExperimentProfile, {
-        applicableStandard: "test",
-        hasData: reference(
-            creepExperimentAttributes.hasMetadata,
-            "LOCAL/child",
+        applicableStandard: experiment.applicableStandard,
+        testID: experiment.testID,
+        specifiedTemperature: experiment.specifiedTemperature,
+        initialStress: experiment.initialStress,
+        testDuration: experiment.testDuration,
+        percentageCreepExtension: experiment.percentageCreepExtension,
+        SingleCrystalOrientation: experiment.SingleCrystalOrientation,
+        hasData: experiment.dataResources.map((file) =>
+            reference(
+                creepExperimentAttributes.hasMetadata,
+                `LOCAL/${file.id}`,
+            ),
         ),
         hasMetadata: skip(),
-        initialStress: "10",
-        percentageCreepExtension: "100%",
-        SingleCrystalOrientation: "5deg",
-        specifiedTemperature: "100°C",
-        testDuration: "5 seconds",
-        testID: "test",
-        usesMaterial: "wood",
+        usesMaterial: experiment.usesMaterial,
     })
+}
+
+for (const experiment of experimentsData.creepExperiments) {
+    for (const file of experiment.dataResources) {
+        addDataResource(context.newRecord(`LOCAL/${file.id}`), file)
+    }
+
+    addCreepExperiment(context.newRecord(`LOCAL/${experiment.id}`), experiment)
+}
+
+for (const record of context.localGraph.getRecords()) {
+    console.log(
+        record.localID,
+        "->",
+        record
+            .getProfiles()
+            .map((profile) => profile.def.readableName)
+            .join(", "),
+    )
 }
