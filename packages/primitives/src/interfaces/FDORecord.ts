@@ -40,4 +40,7 @@ export interface FDORecord {
         toAttribute: PID | Attribute<PID | PID[]>,
         toRecord: PID | LocalID | FDORecord,
     ): void
+
+    toJSON(): Record<string, RecordValue>
+    toString(): string
 }

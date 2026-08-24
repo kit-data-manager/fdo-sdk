@@ -9,6 +9,7 @@ import type { FDORecord } from "@fdo-sdk/primitives"
 import { reference } from "@fdo-sdk/primitives"
 import { skip } from "@fdo-sdk/primitives"
 import experimentsData from "../assets/creep-experiments.json" with { type: "json" }
+import * as fs from "node:fs"
 
 type Experiment = (typeof experimentsData)["creepExperiments"][number]
 type DataFile = Experiment["dataResources"][number]
@@ -63,13 +64,8 @@ for (const experiment of experimentsData.creepExperiments) {
     addCreepExperiment(context.newRecord(`LOCAL/${experiment.id}`), experiment)
 }
 
-for (const record of context.localGraph.getRecords()) {
-    console.log(
-        record.localID,
-        "->",
-        record
-            .getProfiles()
-            .map((profile) => profile.def.readableName)
-            .join(", "),
-    )
-}
+fs.writeFile(
+    "./result.json",
+    JSON.stringify(context.localGraph, null, 2),
+    () => {},
+)

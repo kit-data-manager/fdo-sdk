@@ -1,8 +1,7 @@
 import { describe, it, expect } from "vitest"
-import type { FDORecord } from "../src/interfaces/FDORecord.js"
-import type { ProfileDefinition } from "../src/interfaces/ProfileDefinition.js"
-import type { ProfileAttributes } from "../src/types.js"
-import { ConcreteRecord, ConcreteProfile } from "../src/impl/index.js"
+import type { FDORecord } from "../src/index.js"
+import type { ProfileDefinition } from "../src/index.js"
+import { ConcreteRecord, ConcreteProfile } from "../src/index.js"
 import type { Attribute } from "../src/index.js"
 
 type HMCProfileAttributes = {
@@ -254,6 +253,54 @@ describe("FDORecord (via ConcreteRecord)", () => {
             const profile = new ConcreteProfile(def)
             r.addProfile(profile, { datasetName: "new", authors: "a1" })
             expect(r.get("some/pid1")).toEqual(["existing", "new"])
+        })
+    })
+
+    describe("toString", () => {
+        it("includes localID, PID and attributes", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1", "rec/a")
+            r.set("some/pid", "value")
+            const str = r.toString()
+            expect(str).toContain("LOCAL/1")
+            expect(str).toContain("rec/a")
+            expect(str).toContain('"some/pid": "value"')
+        })
+
+        it("lists the readable names of conforming profiles", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1")
+            r.addProfile(new ConcreteProfile(def), {
+                datasetName: "DS",
+                authors: "a1",
+            })
+            expect(r.toString()).toContain("HMC Profile")
+        })
+
+        it("prints an empty record without failing", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1")
+            expect(r.toString()).toContain("LOCAL/1")
+        })
+    })
+
+    describe("toJSON", () => {
+        it("returns the attributes as a plain pid -> value object", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1", "rec/a")
+            r.set("a/pid", "value")
+            r.set("b/pid", ["x", "y"])
+            expect(r.toJSON()).toEqual({
+                "a/pid": "value",
+                "b/pid": ["x", "y"],
+            })
+        })
+
+        it("returns an empty object for a record without attributes", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1")
+            expect(r.toJSON()).toEqual({})
+        })
+
+        it("is used automatically by JSON.stringify", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1", "rec/a")
+            r.set("a/pid", "value")
+            expect(JSON.stringify(r)).toBe('{"a/pid":"value"}')
         })
     })
 })

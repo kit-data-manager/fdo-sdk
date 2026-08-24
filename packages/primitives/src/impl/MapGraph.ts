@@ -1,9 +1,10 @@
 import type { FDORecord, FDOGraph } from "../interfaces/index.js"
-import type { LocalID, PID } from "../types.js"
+import type { LocalID, PID, RecordValue } from "../types.js"
 
 export class MapGraph implements FDOGraph {
     private recordsByLocalID = new Map<LocalID, FDORecord>()
     private pids = new Map<PID, LocalID>()
+    private hasBeenBuilt = false
 
     addRecord(record: FDORecord): void {
         const previous = this.recordsByLocalID.get(record.localID)
@@ -34,5 +35,35 @@ export class MapGraph implements FDOGraph {
         if (!record) return
         this.recordsByLocalID.delete(record.localID)
         if (record.PID) this.pids.delete(record.PID)
+    }
+
+    build(): void {
+        if (this.hasBeenBuilt) {
+            throw new Error(
+                "This graph has already been built before. Building twice will lead to unexpected behaviour.",
+            )
+        }
+        this.hasBeenBuilt = true
+
+        for (const record of this.recordsByLocalID.values()) {
+            for (const reference of record.getReferences()) {
+                const target = this.getRecord(reference.toRecord)
+                if (!target) continue
+                target.addAttribute(
+                    reference.toAttribute,
+                    record.PID ?? record.localID,
+                )
+            }
+        }
+    }
+
+    toString(): string {
+        return this.getRecords()
+            .map((record) => record.toString())
+            .join("\n")
+    }
+
+    toJSON(): Record<string, RecordValue>[] {
+        return this.getRecords().map((record) => record.toJSON())
     }
 }

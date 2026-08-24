@@ -129,4 +129,128 @@ describe("FDOGraph (via MapGraph)", () => {
             expect(graph.findRecord(() => false)).toBeUndefined()
         })
     })
+
+    describe("build", () => {
+        it("adds a back-reference via the toAttribute on the target record", () => {
+            const graph: FDOGraph = new MapGraph()
+            const a: FDORecord = new ConcreteRecord("LOCAL/1", "rec/a")
+            const b: FDORecord = new ConcreteRecord("LOCAL/2", "rec/b")
+            graph.addRecord(a)
+            graph.addRecord(b)
+
+            a.addReference("has/data", "belongs/to", b)
+
+            graph.build()
+
+            expect(b.get("belongs/to")).toBe("rec/a")
+        })
+
+        it("uses the source record's localID as back-reference when it has no PID", () => {
+            const graph: FDOGraph = new MapGraph()
+            const a: FDORecord = new ConcreteRecord("LOCAL/1")
+            const b: FDORecord = new ConcreteRecord("LOCAL/2", "rec/b")
+            graph.addRecord(a)
+            graph.addRecord(b)
+
+            a.addReference("has/data", "belongs/to", b)
+
+            graph.build()
+
+            expect(b.get("belongs/to")).toBe("LOCAL/1")
+        })
+
+        it("resolves the target by localID", () => {
+            const graph: FDOGraph = new MapGraph()
+            const a: FDORecord = new ConcreteRecord("LOCAL/1", "rec/a")
+            const b: FDORecord = new ConcreteRecord("LOCAL/2")
+            graph.addRecord(a)
+            graph.addRecord(b)
+
+            a.addReference("has/data", "belongs/to", b)
+
+            graph.build()
+
+            expect(b.get("belongs/to")).toBe("rec/a")
+        })
+
+        it("leaves the forward reference in place on the source record", () => {
+            const graph: FDOGraph = new MapGraph()
+            const a: FDORecord = new ConcreteRecord("LOCAL/1", "rec/a")
+            const b: FDORecord = new ConcreteRecord("LOCAL/2", "rec/b")
+            graph.addRecord(a)
+            graph.addRecord(b)
+
+            a.addReference("has/data", "belongs/to", b)
+            graph.build()
+
+            expect(a.get("has/data")).toBe("rec/b")
+            expect(a.getReferences()).toHaveLength(1)
+            expect(b.getReferences()).toHaveLength(0)
+        })
+
+        it("concatenates back-references from multiple sources", () => {
+            const graph: FDOGraph = new MapGraph()
+            const a: FDORecord = new ConcreteRecord("LOCAL/1", "rec/a")
+            const c: FDORecord = new ConcreteRecord("LOCAL/3", "rec/c")
+            const b: FDORecord = new ConcreteRecord("LOCAL/2", "rec/b")
+            graph.addRecord(a)
+            graph.addRecord(c)
+            graph.addRecord(b)
+
+            a.addReference("has/data", "belongs/to", b)
+            c.addReference("has/data", "belongs/to", b)
+
+            graph.build()
+
+            expect(b.get("belongs/to")).toEqual(["rec/a", "rec/c"])
+        })
+
+        it("skips references whose target is not part of the graph", () => {
+            const graph: FDOGraph = new MapGraph()
+            const a: FDORecord = new ConcreteRecord("LOCAL/1", "rec/a")
+            graph.addRecord(a)
+
+            a.addReference("has/data", "belongs/to", "LOCAL/missing")
+
+            expect(() => graph.build()).not.toThrow()
+            expect(a.get("has/data")).toBe("LOCAL/missing")
+        })
+    })
+
+    describe("toString", () => {
+        it("prints all record toStrings separated by newlines", () => {
+            const graph: FDOGraph = new MapGraph()
+            const a: FDORecord = new ConcreteRecord("LOCAL/1", "rec/a")
+            const b: FDORecord = new ConcreteRecord("LOCAL/2")
+            graph.addRecord(a)
+            graph.addRecord(b)
+            expect(graph.toString()).toBe(`${a.toString()}\n${b.toString()}`)
+        })
+
+        it("is empty for an empty graph", () => {
+            const graph: FDOGraph = new MapGraph()
+            expect(graph.toString()).toBe("")
+        })
+    })
+
+    describe("toJSON", () => {
+        it("returns an array of the record JSON objects", () => {
+            const graph: FDOGraph = new MapGraph()
+            const a: FDORecord = new ConcreteRecord("LOCAL/1")
+            const b: FDORecord = new ConcreteRecord("LOCAL/2")
+            a.set("a/pid", "value-a")
+            b.set("b/pid", "value-b")
+            graph.addRecord(a)
+            graph.addRecord(b)
+            expect(graph.toJSON()).toEqual([
+                { "a/pid": "value-a" },
+                { "b/pid": "value-b" },
+            ])
+        })
+
+        it("returns an empty array for an empty graph", () => {
+            const graph: FDOGraph = new MapGraph()
+            expect(graph.toJSON()).toEqual([])
+        })
+    })
 })

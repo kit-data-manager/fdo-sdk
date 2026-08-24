@@ -195,4 +195,24 @@ export class ConcreteRecord implements FDORecord {
     remove(attribute: PID) {
         this.attributes.delete(attribute)
     }
+
+    toJSON(): Record<string, RecordValue> {
+        return Object.fromEntries(this.attributes)
+    }
+
+    toString(): string {
+        return JSON.stringify(
+            {
+                localID: this.localID,
+                PID: this.PID,
+                profiles: this.conformsToProfiles.map(
+                    (profile) => profile.def.readableName,
+                ),
+                attributes: Object.fromEntries(this.attributes),
+                references: this.references,
+            },
+            null,
+            2,
+        )
+    }
 }
