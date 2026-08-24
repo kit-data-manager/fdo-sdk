@@ -7,10 +7,19 @@ export type ProfileAttributes = {
     [key: string]: RecordValue
 }
 
-export const Keep = Symbol("Keep")
+export type KeepMarker = { mark: "keep" }
+export type SkipMarker = { mark: "skip" }
+export type ReferenceMarker = { mark: "reference" } & Omit<
+    ReferenceDeclaration,
+    "fromAttribute"
+>
+export type AttributeMarker = KeepMarker | SkipMarker | ReferenceMarker
 
-export type AllowKeep<P extends ProfileAttributes> = {
-    [key in keyof P]: P[key] | typeof Keep
+type AddMarker<T> = T extends (infer InnerType)[]
+    ? AttributeMarker | (InnerType | ReferenceMarker)[]
+    : T | AttributeMarker
+export type WithMarkers<P extends ProfileAttributes> = {
+    [key in keyof P]: AddMarker<P[key]>
 }
 
 export type AttributeToPID<P extends ProfileAttributes> = {
@@ -18,7 +27,7 @@ export type AttributeToPID<P extends ProfileAttributes> = {
 }
 
 export type ReferenceDeclaration = {
-    fromAttribute: string
-    toAttribute: string
+    fromAttribute: PID
+    toAttribute: PID
     toRecord: LocalID | PID
 }

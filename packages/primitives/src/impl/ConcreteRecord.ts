@@ -4,8 +4,7 @@ import type {
     ProfileDefinition,
 } from "../interfaces/index.js"
 import {
-    type AllowKeep,
-    Keep,
+    type WithMarkers,
     type LocalID,
     type PID,
     type ProfileAttributes,
@@ -14,6 +13,7 @@ import {
 } from "../types.js"
 import { toArray } from "../utils.js"
 import type { Profile } from "../interfaces/Profile.js"
+import { isKeep, isReference, isSkip } from "./markers.js"
 
 export class ConcreteRecord implements FDORecord {
     readonly localID: LocalID
@@ -63,21 +63,68 @@ export class ConcreteRecord implements FDORecord {
     addProfile<P extends Profile<ProfileDefinition<ProfileAttributes>>>(
         profile: P,
         attributes: P extends Profile<ProfileDefinition<infer I>>
-            ? AllowKeep<I>
+            ? WithMarkers<I>
             : never,
     ): void {
         this.conformsToProfiles.push(profile)
-        const mapped = profile.mapAttributeNamesToPIDs(attributes)
-        for (const [key, value] of Object.entries(mapped)) {
-            if (value === Keep) {
-                const existingValue = this.get(key as PID)
+        const mapped = new Map<PID, RecordValue>()
+        for (const [attributeName, value] of Object.entries(attributes)) {
+            const attributePID = profile.mapAttributeNameToPID(attributeName)
+
+            if (isKeep(value)) {
+                const existingValue = this.get(attributePID)
                 if (existingValue === undefined) {
                     throw new Error(
-                        `Cannot add profile ${profile.def.readableName} because attribute ${profile.mapPIDToAttributeName(key as PID)} was specified as "Keep", but is not present in this record`,
+                        `Cannot add profile ${profile.def.readableName} because attribute ${attributeName} (PID: ${attributePID}) was specified as "keep", but is not present in this record`,
                     )
                 } else {
-                    mapped.set(key as PID, existingValue)
+                    mapped.set(attributePID, existingValue)
                 }
+            } else if (isSkip(value)) {
+                // continue
+            } else if (isReference(value)) {
+                this.addReference(
+                    attributePID,
+                    value.toAttribute,
+                    value.toRecord,
+                )
+            } else if (
+                Array.isArray(value) &&
+                value.some((element) => isReference(element))
+            ) {
+                const references = value.filter((element) =>
+                    isReference(element),
+                )
+                const primitives = value.filter(
+                    (element) => typeof element !== "object",
+                )
+
+                for (const reference of references) {
+                    this.addReference(
+                        attributePID,
+                        reference.toAttribute,
+                        reference.toRecord,
+                    )
+                }
+
+                mapped.set(attributePID, primitives)
+            } else {
+                if (
+                    Array.isArray(value) &&
+                    value.some((element) => typeof element === "object")
+                ) {
+                    console.error(
+                        "Profile instance contains illegal value of type object. This might be an internal error.",
+                        attributes,
+                        attributePID,
+                        value,
+                    )
+                    throw new Error(
+                        "Profile instance contains illegal value of type object. This might be an internal error.",
+                    )
+                }
+
+                mapped.set(attributePID, value as RecordValue)
             }
         }
         this.addMap(mapped as Map<PID, RecordValue>)

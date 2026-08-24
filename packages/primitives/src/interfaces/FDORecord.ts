@@ -1,6 +1,6 @@
 import type { ProfileDefinition } from "./ProfileDefinition.js"
 import type {
-    AllowKeep,
+    WithMarkers,
     LocalID,
     PID,
     ProfileAttributes,
@@ -32,7 +32,7 @@ export interface FDORecord {
     addProfile<P extends Profile<ProfileDefinition<ProfileAttributes>>>(
         profile: P,
         attributes: P extends Profile<ProfileDefinition<infer A>>
-            ? AllowKeep<A>
+            ? WithMarkers<A>
             : never,
     ): void
     addReference(

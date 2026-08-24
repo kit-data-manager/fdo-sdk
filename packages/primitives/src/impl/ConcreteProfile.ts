@@ -1,11 +1,6 @@
 import type { ProfileDefinition } from "../interfaces/index.js"
 import type { Profile } from "../interfaces/Profile.js"
-import type {
-    AllowKeep,
-    PID,
-    ProfileAttributes,
-    RecordValue,
-} from "../types.js"
+import type { PID, ProfileAttributes } from "../types.js"
 
 export class ConcreteProfile<
     D extends ProfileDefinition<ProfileAttributes>,
@@ -22,16 +17,12 @@ export class ConcreteProfile<
         return match[0]
     }
 
-    mapAttributeNamesToPIDs(
-        attributes: D extends ProfileDefinition<infer A> ? AllowKeep<A> : never,
-    ): Map<PID, RecordValue | symbol> {
-        const entries = Object.entries(attributes)
-        const map = new Map<PID, RecordValue | symbol>()
-        for (const [key, value] of entries) {
-            const PID = this.def.mapping[key]
-            if (!PID) throw new Error(`Unknown mapped attribute "${key}"`)
-            map.set(PID, value)
-        }
-        return map
+    mapAttributeNameToPID(attributeName: string): PID {
+        const pid = this.def.mapping[attributeName]
+        if (!pid)
+            throw new Error(
+                `mapAttributeNameToPID: No attribute with the name ${attributeName} is defined in the profile ${this.def.readableName}`,
+            )
+        return pid
     }
 }
