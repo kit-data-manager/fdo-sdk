@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import type { FDORecord } from "../src/index.js"
+import { type FDORecord, keep, reference, skip } from "../src/index.js"
 import type { ProfileDefinition } from "../src/index.js"
 import { ConcreteRecord, ConcreteProfile } from "../src/index.js"
 import type { Attribute } from "../src/index.js"
@@ -18,6 +18,11 @@ const def: ProfileDefinition<HMCProfileAttributes> = {
         authors: "some/pid2",
         dateCreated: "some/pid3",
     },
+}
+
+const testAttr: Attribute<string | string[]> = {
+    pid: "TEST/testAttr",
+    readableName: "testAttr",
 }
 
 const srcAttr: Attribute<string> = {
@@ -145,30 +150,30 @@ describe("FDORecord (via ConcreteRecord)", () => {
         })
     })
 
-    // TODO
-    // describe("add (attribute tuple)", () => {
-    //     it("adds a [PID, value] tuple", () => {
-    //         const r: FDORecord = new ConcreteRecord("LOCAL/1")
-    //         r.add(["a/pid", "v"])
-    //         expect(r.get("a/pid")).toBe("v")
-    //     })
-    //
-    //     it("concatenates values when adding a tuple for an existing PID", () => {
-    //         const r: FDORecord = new ConcreteRecord("LOCAL/1")
-    //         r.set("a/pid", "first")
-    //         r.add(["a/pid", "second"])
-    //         expect(r.get("a/pid")).toEqual(["first", "second"])
-    //     })
-    //
-    //     it("concatenates into an existing array value", () => {
-    //         const r: FDORecord = new ConcreteRecord("LOCAL/1")
-    //         r.set("a/pid", ["x"])
-    //         r.add(["a/pid", "y"])
-    //         expect(r.get("a/pid")).toEqual(["x", "y"])
-    //     })
-    // })
+    describe("addAttribute", () => {
+        it("adds an attribute", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1")
+            r.addAttribute(testAttr, "test")
+            expect(r.get(testAttr)).toBe("test")
+            expect(r.get(testAttr.pid)).toBe("test")
+        })
 
-    describe("add (record)", () => {
+        it("concatenates values when adding a tuple for an existing PID", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1")
+            r.set(testAttr, "first")
+            r.addAttribute(testAttr, "second")
+            expect(r.get(testAttr)).toEqual(["first", "second"])
+        })
+
+        it("concatenates into an existing array value", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1")
+            r.set(testAttr, ["x"])
+            r.addAttribute(testAttr, "y")
+            expect(r.get(testAttr)).toEqual(["x", "y"])
+        })
+    })
+
+    describe("addRecord", () => {
         it("merges all attributes from another record", () => {
             const a: FDORecord = new ConcreteRecord("LOCAL/1")
             a.set("a/1", "v1")
@@ -253,6 +258,112 @@ describe("FDORecord (via ConcreteRecord)", () => {
             const profile = new ConcreteProfile(def)
             r.addProfile(profile, { datasetName: "new", authors: "a1" })
             expect(r.get("some/pid1")).toEqual(["existing", "new"])
+        })
+
+        it("does not add skipped values", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1")
+            const profile = new ConcreteProfile(def)
+            r.addProfile(profile, { datasetName: skip(), authors: "a1" })
+            expect(r.get("some/pid1")).toEqual(undefined)
+        })
+
+        it("does not override or add to existing values when keep is used", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1")
+            const profile = new ConcreteProfile(def)
+            r.set("some/pid1", "existing")
+            r.addProfile(profile, { datasetName: keep(), authors: "a1" })
+            expect(r.get("some/pid1")).toEqual("existing")
+        })
+
+        it("throws when keep is used but no value exists", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1")
+            const profile = new ConcreteProfile(def)
+            expect(() =>
+                r.addProfile(profile, { datasetName: keep(), authors: "a1" }),
+            ).toThrow(
+                'Cannot add profile HMC Profile because attribute datasetName (PID: some/pid1) was specified as "keep", but is not present in this record',
+            )
+        })
+
+        it("adds single references", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1")
+            const profile = new ConcreteProfile(def)
+
+            r.addProfile(profile, {
+                datasetName: reference("some/pid5", "LOCAL/target"),
+                authors: "a1",
+            })
+            expect(r.get("some/pid1")).toEqual("LOCAL/target")
+            expect(r.getReferences()).toEqual([
+                {
+                    fromAttribute: "some/pid1",
+                    toAttribute: "some/pid5",
+                    toRecord: "LOCAL/target",
+                },
+            ])
+        })
+
+        it("adds multiple references", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1")
+            const profile = new ConcreteProfile(def)
+
+            r.addProfile(profile, {
+                authors: [
+                    reference("some/pid5", "LOCAL/target1"),
+                    reference("some/pid5", "LOCAL/target2"),
+                    "orcid...",
+                    reference(testAttr, "LOCAL/target3"),
+                ],
+                datasetName: "Test Dataset",
+            })
+            expect(r.get("some/pid2")).toEqual([
+                "LOCAL/target1",
+                "LOCAL/target2",
+                "LOCAL/target3",
+                "orcid...",
+            ])
+            expect(r.getReferences()).toEqual([
+                {
+                    fromAttribute: "some/pid2",
+                    toAttribute: "some/pid5",
+                    toRecord: "LOCAL/target1",
+                },
+                {
+                    fromAttribute: "some/pid2",
+                    toAttribute: "some/pid5",
+                    toRecord: "LOCAL/target2",
+                },
+                {
+                    fromAttribute: "some/pid2",
+                    toAttribute: testAttr.pid,
+                    toRecord: "LOCAL/target3",
+                },
+            ])
+        })
+
+        it("catches and throws unknown markers", () => {
+            const r: FDORecord = new ConcreteRecord("LOCAL/1")
+            const profile = new ConcreteProfile(def)
+
+            expect(() =>
+                r.addProfile(profile, {
+                    // @ts-ignore
+                    datasetName: { mark: "test" },
+                    authors: "a1",
+                }),
+            ).toThrow(
+                "Profile instance contains illegal value of type object. This might be an internal error.",
+            )
+
+            expect(() =>
+                r.addProfile(profile, {
+                    // @ts-ignore
+                    datasetName: ["test", { mark: "test" }],
+                    authors: "a1",
+                }),
+            ).toThrow(
+                "Profile instance contains illegal value of type object. This might be an internal error.",
+            )
         })
     })
 

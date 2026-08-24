@@ -31,13 +31,8 @@ export class ConcreteRecord implements FDORecord {
     }
 
     addRecord(record: FDORecord): void {
-        if (Array.isArray(record)) {
-            const recordMap = new Map([[record[0], record[1]]])
-            this.addMap(recordMap)
-        } else {
-            const recordMap = record.getAll()
-            this.addMap(recordMap)
-        }
+        const recordMap = record.getAll()
+        this.addMap(recordMap)
     }
 
     private addMap(map: Map<PID, RecordValue>) {
@@ -77,8 +72,6 @@ export class ConcreteRecord implements FDORecord {
                     throw new Error(
                         `Cannot add profile ${profile.def.readableName} because attribute ${attributeName} (PID: ${attributePID}) was specified as "keep", but is not present in this record`,
                     )
-                } else {
-                    mapped.set(attributePID, existingValue)
                 }
             } else if (isSkip(value)) {
                 // continue
@@ -110,8 +103,9 @@ export class ConcreteRecord implements FDORecord {
                 mapped.set(attributePID, primitives)
             } else {
                 if (
-                    Array.isArray(value) &&
-                    value.some((element) => typeof element === "object")
+                    (Array.isArray(value) &&
+                        value.some((element) => typeof element === "object")) ||
+                    (typeof value === "object" && !Array.isArray(value))
                 ) {
                     console.error(
                         "Profile instance contains illegal value of type object. This might be an internal error.",

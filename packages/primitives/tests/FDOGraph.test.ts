@@ -215,6 +215,18 @@ describe("FDOGraph (via MapGraph)", () => {
             expect(() => graph.build()).not.toThrow()
             expect(a.get("has/data")).toBe("LOCAL/missing")
         })
+
+        it("throws when built twice or more", () => {
+            const graph: FDOGraph = new MapGraph()
+            const a: FDORecord = new ConcreteRecord("LOCAL/1", "rec/a")
+            graph.addRecord(a)
+
+            a.addReference("has/data", "belongs/to", "LOCAL/missing")
+
+            expect(() => graph.build()).not.toThrow()
+            expect(() => graph.build()).toThrow()
+            expect(() => graph.build()).toThrow()
+        })
     })
 
     describe("toString", () => {

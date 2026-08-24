@@ -13,7 +13,11 @@ export class ConcreteProfile<
 
     mapPIDToAttributeName(pid: PID): string {
         const mapping = Object.entries(this.def.mapping)
-        const match = mapping.find(([, p]) => p === pid)!
+        const match = mapping.find(([, p]) => p === pid)
+        if (!match)
+            throw new Error(
+                `mapPIDToAttributeName: No attribute with the PID ${pid} is defined in the profile ${this.def.readableName}`,
+            )
         return match[0]
     }
 

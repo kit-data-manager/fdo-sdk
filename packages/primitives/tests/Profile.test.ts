@@ -28,16 +28,33 @@ describe("Profile (via ConcreteProfile)", () => {
         expect(profile.def.mapping.datasetName).toBe("some/pid1")
     })
 
-    it("maps a single string attribute name to its PID", () => {
-        const profile = new ConcreteProfile(def)
-        const mapped = profile.mapAttributeNameToPID("datasetName")
-        expect(mapped).toBe("some/pid1")
+    describe("mapPIDToAttributeName", () => {
+        it("maps a single PID to its attribute name", () => {
+            const profile = new ConcreteProfile(def)
+            const mapped = profile.mapPIDToAttributeName("some/pid1")
+            expect(mapped).toBe("datasetName")
+        })
+
+        it("throws when an attribute has no mapping", () => {
+            const profile = new ConcreteProfile(def)
+            expect(() => profile.mapPIDToAttributeName("not/known")).toThrow(
+                "mapPIDToAttributeName: No attribute with the PID not/known is defined in the profile HMC Profile",
+            )
+        })
     })
 
-    it("throws when an attribute has no mapping", () => {
-        const profile = new ConcreteProfile(def)
-        expect(() => profile.mapAttributeNameToPID("unknown")).toThrow(
-            "mapAttributeNameToPID: No attribute with the name unknown is defined in the profile HMC Profile",
-        )
+    describe("mapAttributeNameToPID", () => {
+        it("maps a single string attribute name to its PID", () => {
+            const profile = new ConcreteProfile(def)
+            const mapped = profile.mapAttributeNameToPID("datasetName")
+            expect(mapped).toBe("some/pid1")
+        })
+
+        it("throws when an attribute has no mapping", () => {
+            const profile = new ConcreteProfile(def)
+            expect(() => profile.mapAttributeNameToPID("unknown")).toThrow(
+                "mapAttributeNameToPID: No attribute with the name unknown is defined in the profile HMC Profile",
+            )
+        })
     })
 })
