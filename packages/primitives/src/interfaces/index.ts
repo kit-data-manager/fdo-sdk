@@ -1,3 +1,5 @@
 export * from "./FDORecord.js"
 export * from "./FDOGraph.js"
 export * from "./ProfileDefinition.js"
+export * from "./Attribute.js"
+export * from "./Profile.js"

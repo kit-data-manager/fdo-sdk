@@ -211,6 +211,16 @@ importers:
         specifier: ^3.9.6
         version: 3.9.6
 
+  packages/examples:
+    dependencies:
+      '@fdo-sdk/primitives':
+        specifier: workspace:*
+        version: link:../primitives
+    devDependencies:
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
   packages/primitives:
     devDependencies:
       '@types/node':

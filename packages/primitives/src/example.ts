@@ -14,6 +14,7 @@ type HMCProfileAttributes = {
 
 const HMCProfileDefinition: ProfileDefinition<HMCProfileAttributes> = {
     pid: "jfisodf/gkfpgfk",
+    readableName: "HMC Profile",
     mapping: {
         datasetName: "some/pid1",
         authors: "some/pid2",

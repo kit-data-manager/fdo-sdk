@@ -1,6 +1,6 @@
 import type { ProfileDefinition } from "./ProfileDefinition.js"
 import type {
-    Attribute,
+    AllowKeep,
     LocalID,
     PID,
     ProfileAttributes,
@@ -8,28 +8,36 @@ import type {
     ReferenceDeclaration,
 } from "../types.js"
 import type { Profile } from "./Profile.js"
+import type { Attribute } from "./Attribute.js"
 
 export interface FDORecord {
     localID: LocalID
     PID: PID | undefined
 
-    get(attribute: PID): RecordValue | undefined
+    get(attribute: PID | Attribute<never>): RecordValue | undefined
     getAll(): Map<PID, RecordValue>
     getReferences(): ReferenceDeclaration[]
     getProfiles(): Profile<ProfileDefinition<ProfileAttributes>>[]
-    has(attribute: PID): boolean
+    has(attribute: PID | Attribute<never>): boolean
     set(attribute: PID, value: RecordValue): void
-    remove(attribute: PID): void
+    set<T extends RecordValue>(attribute: Attribute<T>, value: T): void
+    remove(attribute: PID | Attribute<never>): void
 
-    add(record: FDORecord): void
-    add(attribute: Attribute): void
-    addReference(
-        fromAttribute: PID,
-        toAttribute: PID,
-        toRecord: PID | LocalID | FDORecord,
+    addRecord(record: FDORecord): void
+    addAttribute(attribute: PID, value: RecordValue): void
+    addAttribute<Attr extends Attribute<RecordValue>>(
+        attribute: Attr,
+        value: Attr extends Attribute<infer T> ? T : never,
     ): void
     addProfile<P extends Profile<ProfileDefinition<ProfileAttributes>>>(
         profile: P,
-        attributes: P extends Profile<ProfileDefinition<infer A>> ? A : never,
+        attributes: P extends Profile<ProfileDefinition<infer A>>
+            ? AllowKeep<A>
+            : never,
+    ): void
+    addReference(
+        fromAttribute: PID | Attribute<PID | PID[]>,
+        toAttribute: PID | Attribute<PID | PID[]>,
+        toRecord: PID | LocalID | FDORecord,
     ): void
 }

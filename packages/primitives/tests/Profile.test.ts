@@ -12,6 +12,7 @@ type HMCProfileAttributes = {
 
 const def: ProfileDefinition<HMCProfileAttributes> = {
     pid: "profile/pid",
+    readableName: "HMC Profile",
     mapping: {
         datasetName: "some/pid1",
         authors: "some/pid2",
@@ -76,9 +77,7 @@ describe("Profile (via ConcreteProfile)", () => {
             unknown: "x",
         }
         expect(() =>
-            profile.mapAttributeNamesToPIDs(
-                attrs as HMCProfileAttributes,
-            ),
+            profile.mapAttributeNamesToPIDs(attrs as HMCProfileAttributes),
         ).toThrow('Unknown mapped attribute "unknown"')
     })
 })

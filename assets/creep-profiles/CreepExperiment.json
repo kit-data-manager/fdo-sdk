@@ -1,0 +1,123 @@
+{
+  "Identifier": "21.T11969/222fb86c0b3bece35729",
+  "name": "CreepExperiment",
+  "description": "Profile for creep testing experiments per DIN EN ISO 204:2023-10, capturing test conditions, parameters, and relationships to materials and data.",
+  "versioning": {
+    "version": "0.0.1"
+  },
+  "provenance": {
+    "contributors": [
+      {
+        "Name": "Maximilian Inckmann",
+        "ORCID": "https://orcid.org/0009-0005-2800-4833"
+      }
+    ],
+    "creationDate": "2026-06-22T16:39:29.497Z",
+    "lastModificationDate": "2026-06-22T16:39:29.497Z"
+  },
+  "ExpectedUse": "Comprehensive metadata for high-temperature creep tests on metallic materials, including stress rupture testing and time-dependent deformation measurements under sustained load.",
+  "References": [
+    "https://dx.doi.org/10.31030/3485273",
+    "https://www.dinmedia.de/en/standard/din-en-iso-204/371676068"
+  ],
+  "Aliases": [
+    "Creep Test Profile",
+    "Stress Rupture Test Profile",
+    "High-Temperature Testing Profile"
+  ],
+  "Schema": {
+    "Type": "Object",
+    "Properties": [
+      {
+        "Name": "applicableStandard",
+        "Title": "Applicable Standard",
+        "Description": "Identifier or designation of a technical standard, specification, or protocol governing a procedure, test, or data format.",
+        "Type": "21.T11969/dda596702b20205cba36",
+        "Properties": {
+          "Cardinality": "1 - n"
+        }
+      },
+      {
+        "Name": "testID",
+        "Title": "Test ID",
+        "Description": "Unique identifier assigned to a specific test, experiment, or measurement procedure instance.",
+        "Type": "21.T11969/1a34a6966f91cc341f58",
+        "Properties": {
+          "Cardinality": "1"
+        }
+      },
+      {
+        "Name": "specifiedTemperature",
+        "Title": "Specified Temperature",
+        "Description": "Test temperature value in degrees Celsius (°C) for experimental conditions or material testing procedures.",
+        "Type": "21.T11969/ac4a911ffb09772718e3",
+        "Properties": {
+          "Cardinality": "1"
+        }
+      },
+      {
+        "Name": "initialStress",
+        "Title": "Initial Stress",
+        "Description": "Applied mechanical stress value in megapascals (MPa) at the start of a materials testing experiment.",
+        "Type": "21.T11969/8bd53487030550ee2e94",
+        "Properties": {
+          "Cardinality": "1"
+        }
+      },
+      {
+        "Name": "testDuration",
+        "Title": "Test Duration",
+        "Description": "Duration of an experiment or test procedure expressed in ISO 8601 duration format.",
+        "Type": "21.T11969/7e84faadd49ac88d02b8",
+        "Properties": {
+          "Cardinality": "1"
+        }
+      },
+      {
+        "Name": "percentageCreepExtension",
+        "Title": "Percentage Creep Extension",
+        "Description": "Creep strain expressed as a dimensionless ratio (0-1) representing the relative elongation of a material under sustained load.",
+        "Type": "21.T11969/4be978cac878da94105e",
+        "Properties": {
+          "Cardinality": "1"
+        }
+      },
+      {
+        "Name": "SingleCrystalOrientation",
+        "Title": "Single Crystal Orientation",
+        "Description": "Crystallographic orientation angle in degrees (0-360) specifying the angular position of a single crystal relative to a reference axis.",
+        "Type": "21.T11969/4597cf0db467d7e365a9",
+        "Properties": {
+          "Cardinality": "1"
+        }
+      },
+      {
+        "Name": "hasData",
+        "Title": "Has Data",
+        "Description": "Handle identifier(s) for data resources associated with or derived from this resource.",
+        "Type": "21.T11969/cc230f978e8add2e2520",
+        "Properties": {
+          "Cardinality": "1 - n"
+        }
+      },
+      {
+        "Name": "hasMetadata",
+        "Title": "Has Metadata",
+        "Description": "Handle identifier(s) for metadata resources describing or accompanying this resource.",
+        "Type": "21.T11969/d0773859091aeb451528",
+        "Properties": {
+          "Cardinality": "1 - n"
+        }
+      },
+      {
+        "Name": "usesMaterial",
+        "Title": "Uses Material",
+        "Description": "Handle identifier(s) for material samples or substances used in an experiment or process.",
+        "Type": "21.T11969/2dced98076fda9cbf0ef",
+        "Properties": {
+          "Cardinality": "1 - n"
+        }
+      }
+    ]
+  }
+}

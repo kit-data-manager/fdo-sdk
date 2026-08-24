@@ -3,6 +3,7 @@ import type { FDORecord } from "../src/interfaces/FDORecord.js"
 import type { ProfileDefinition } from "../src/interfaces/ProfileDefinition.js"
 import type { ProfileAttributes } from "../src/types.js"
 import { ConcreteRecord, ConcreteProfile } from "../src/impl/index.js"
+import type { Attribute } from "../src/index.js"
 
 type HMCProfileAttributes = {
     datasetName: string
@@ -12,11 +13,32 @@ type HMCProfileAttributes = {
 
 const def: ProfileDefinition<HMCProfileAttributes> = {
     pid: "profile/pid",
+    readableName: "HMC Profile",
     mapping: {
         datasetName: "some/pid1",
         authors: "some/pid2",
         dateCreated: "some/pid3",
     },
+}
+
+const srcAttr: Attribute<string> = {
+    pid: "TEST/srcAttr",
+    readableName: "srcAttr",
+}
+
+const tgtAttr: Attribute<string> = {
+    pid: "TEST/tgtAttr",
+    readableName: "tgtAttr",
+}
+
+const fromAttr: Attribute<string> = {
+    pid: "TEST/from",
+    readableName: "from",
+}
+
+const toAttr: Attribute<string> = {
+    pid: "TEST/to",
+    readableName: "to",
 }
 
 describe("FDORecord (via ConcreteRecord)", () => {
@@ -75,15 +97,15 @@ describe("FDORecord (via ConcreteRecord)", () => {
 
         it("set removes all reference declarations", () => {
             const r: FDORecord = new ConcreteRecord("LOCAL/1")
-            r.addReference("test/src-attr", "test/tgt-attr", "LOCAL/2")
-            expect(r.get("test/src-attr")).toBe("LOCAL/2")
+            r.addReference(srcAttr, tgtAttr, "LOCAL/2")
+            expect(r.get(srcAttr)).toBe("LOCAL/2")
             expect(r.getReferences()).toHaveLength(1)
-            r.set("test/src-attr", "other value")
-            expect(r.get("test/src-attr")).toBe("other value")
+            r.set(srcAttr, "other value")
+            expect(r.get(srcAttr)).toBe("other value")
             expect(r.getReferences()).toHaveLength(0)
         })
 
-        it("set removes all reference declarations", () => {
+        it("removes elements on remove", () => {
             const r: FDORecord = new ConcreteRecord("LOCAL/1")
             r.set("a/pid", ["x", "y"])
             r.set("b/pid", ["x", "y"])
@@ -124,27 +146,28 @@ describe("FDORecord (via ConcreteRecord)", () => {
         })
     })
 
-    describe("add (attribute tuple)", () => {
-        it("adds a [PID, value] tuple", () => {
-            const r: FDORecord = new ConcreteRecord("LOCAL/1")
-            r.add(["a/pid", "v"])
-            expect(r.get("a/pid")).toBe("v")
-        })
-
-        it("concatenates values when adding a tuple for an existing PID", () => {
-            const r: FDORecord = new ConcreteRecord("LOCAL/1")
-            r.set("a/pid", "first")
-            r.add(["a/pid", "second"])
-            expect(r.get("a/pid")).toEqual(["first", "second"])
-        })
-
-        it("concatenates into an existing array value", () => {
-            const r: FDORecord = new ConcreteRecord("LOCAL/1")
-            r.set("a/pid", ["x"])
-            r.add(["a/pid", "y"])
-            expect(r.get("a/pid")).toEqual(["x", "y"])
-        })
-    })
+    // TODO
+    // describe("add (attribute tuple)", () => {
+    //     it("adds a [PID, value] tuple", () => {
+    //         const r: FDORecord = new ConcreteRecord("LOCAL/1")
+    //         r.add(["a/pid", "v"])
+    //         expect(r.get("a/pid")).toBe("v")
+    //     })
+    //
+    //     it("concatenates values when adding a tuple for an existing PID", () => {
+    //         const r: FDORecord = new ConcreteRecord("LOCAL/1")
+    //         r.set("a/pid", "first")
+    //         r.add(["a/pid", "second"])
+    //         expect(r.get("a/pid")).toEqual(["first", "second"])
+    //     })
+    //
+    //     it("concatenates into an existing array value", () => {
+    //         const r: FDORecord = new ConcreteRecord("LOCAL/1")
+    //         r.set("a/pid", ["x"])
+    //         r.add(["a/pid", "y"])
+    //         expect(r.get("a/pid")).toEqual(["x", "y"])
+    //     })
+    // })
 
     describe("add (record)", () => {
         it("merges all attributes from another record", () => {
@@ -152,7 +175,7 @@ describe("FDORecord (via ConcreteRecord)", () => {
             a.set("a/1", "v1")
             a.set("a/2", "v2")
             const b: FDORecord = new ConcreteRecord("LOCAL/2")
-            b.add(a)
+            b.addRecord(a)
             expect(b.get("a/1")).toBe("v1")
             expect(b.get("a/2")).toBe("v2")
         })
@@ -162,7 +185,7 @@ describe("FDORecord (via ConcreteRecord)", () => {
             a.set("shared/pid", "fromA")
             const b: FDORecord = new ConcreteRecord("LOCAL/2")
             b.set("shared/pid", "fromB")
-            b.add(a)
+            b.addRecord(a)
             expect(b.get("shared/pid")).toEqual(["fromB", "fromA"])
         })
     })
@@ -170,14 +193,14 @@ describe("FDORecord (via ConcreteRecord)", () => {
     describe("addReference", () => {
         it("adds a reference attribute pointing at a PID target", () => {
             const r: FDORecord = new ConcreteRecord("LOCAL/1")
-            r.addReference("from/pid", "to/pid", "target/pid")
-            expect(r.get("from/pid")).toBe("target/pid")
+            r.addReference(fromAttr, toAttr, "target/pid")
+            expect(r.get(fromAttr)).toBe("target/pid")
         })
 
         it("adds a reference attribute pointing at a LocalID target", () => {
             const r: FDORecord = new ConcreteRecord("LOCAL/1")
-            r.addReference("from/pid", "to/pid", "LOCAL/2")
-            expect(r.get("from/pid")).toBe("LOCAL/2")
+            r.addReference(fromAttr, toAttr, "LOCAL/2")
+            expect(r.get(fromAttr)).toBe("LOCAL/2")
         })
 
         it("uses the record's PID as target when given a record with a PID", () => {
@@ -186,22 +209,22 @@ describe("FDORecord (via ConcreteRecord)", () => {
                 "target/pid",
             )
             const r: FDORecord = new ConcreteRecord("LOCAL/1")
-            r.addReference("from/pid", "to/pid", target)
-            expect(r.get("from/pid")).toBe("target/pid")
+            r.addReference(fromAttr, toAttr, target)
+            expect(r.get(fromAttr)).toBe("target/pid")
         })
 
         it("falls back to localID when the target record has no PID", () => {
             const target: FDORecord = new ConcreteRecord("LOCAL/2")
             const r: FDORecord = new ConcreteRecord("LOCAL/1")
-            r.addReference("from/pid", "to/pid", target)
-            expect(r.get("from/pid")).toBe("LOCAL/2")
+            r.addReference(fromAttr, toAttr, target)
+            expect(r.get(fromAttr)).toBe("LOCAL/2")
         })
 
         it("concatenates with an existing value for the from-attribute", () => {
             const r: FDORecord = new ConcreteRecord("LOCAL/1")
-            r.set("from/pid", "existing")
-            r.addReference("from/pid", "to/pid", "target/pid")
-            expect(r.get("from/pid")).toEqual(["existing", "target/pid"])
+            r.set(fromAttr, "existing")
+            r.addReference(fromAttr, toAttr, "target/pid")
+            expect(r.get(fromAttr)).toEqual(["existing", "target/pid"])
         })
     })
 

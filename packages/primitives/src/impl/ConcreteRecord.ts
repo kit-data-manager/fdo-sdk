@@ -1,11 +1,16 @@
-import type { FDORecord, ProfileDefinition } from "../interfaces/index.js"
 import type {
     Attribute,
-    LocalID,
-    PID,
-    ProfileAttributes,
-    RecordValue,
-    ReferenceDeclaration,
+    FDORecord,
+    ProfileDefinition,
+} from "../interfaces/index.js"
+import {
+    type AllowKeep,
+    Keep,
+    type LocalID,
+    type PID,
+    type ProfileAttributes,
+    type RecordValue,
+    type ReferenceDeclaration,
 } from "../types.js"
 import { toArray } from "../utils.js"
 import type { Profile } from "../interfaces/Profile.js"
@@ -25,9 +30,7 @@ export class ConcreteRecord implements FDORecord {
         this.PID = pid
     }
 
-    add(record: FDORecord): void
-    add(attribute: Attribute): void
-    add(record: FDORecord | Attribute): void {
+    addRecord(record: FDORecord): void {
         if (Array.isArray(record)) {
             const recordMap = new Map([[record[0], record[1]]])
             this.addMap(recordMap)
@@ -50,18 +53,39 @@ export class ConcreteRecord implements FDORecord {
         }
     }
 
+    addAttribute<Attr extends Attribute<RecordValue>>(
+        attribute: Attr | PID,
+        value: Attr extends Attribute<infer T> ? T : RecordValue,
+    ): void {
+        this.addMap(new Map([[this.getPIDFromAttributOrPID(attribute), value]]))
+    }
+
     addProfile<P extends Profile<ProfileDefinition<ProfileAttributes>>>(
         profile: P,
-        attributes: P extends Profile<ProfileDefinition<infer I>> ? I : never,
+        attributes: P extends Profile<ProfileDefinition<infer I>>
+            ? AllowKeep<I>
+            : never,
     ): void {
         this.conformsToProfiles.push(profile)
         const mapped = profile.mapAttributeNamesToPIDs(attributes)
-        this.addMap(mapped)
+        for (const [key, value] of Object.entries(mapped)) {
+            if (value === Keep) {
+                const existingValue = this.get(key as PID)
+                if (existingValue === undefined) {
+                    throw new Error(
+                        `Cannot add profile ${profile.def.readableName} because attribute ${profile.mapPIDToAttributeName(key as PID)} was specified as "Keep", but is not present in this record`,
+                    )
+                } else {
+                    mapped.set(key as PID, existingValue)
+                }
+            }
+        }
+        this.addMap(mapped as Map<PID, RecordValue>)
     }
 
     addReference(
-        fromAttribute: PID,
-        toAttribute: PID,
+        fromAttribute: PID | Attribute<PID | PID[]>,
+        toAttribute: PID | Attribute<PID | PID[]>,
         toRecord: PID | LocalID | FDORecord,
     ): void {
         const target =
@@ -70,15 +94,17 @@ export class ConcreteRecord implements FDORecord {
                 : toRecord
 
         this.references.push({
-            fromAttribute,
-            toAttribute,
+            fromAttribute: this.getPIDFromAttributOrPID(fromAttribute),
+            toAttribute: this.getPIDFromAttributOrPID(toAttribute),
             toRecord: target,
         })
-        this.add([fromAttribute, target])
+        this.addAttribute(fromAttribute, target)
     }
 
-    get(attribute: PID): RecordValue | undefined {
-        return structuredClone(this.attributes.get(attribute))
+    get(attribute: PID | Attribute<never>): RecordValue | undefined {
+        return structuredClone(
+            this.attributes.get(this.getPIDFromAttributOrPID(attribute)),
+        )
     }
 
     getAll(): Map<PID, RecordValue> {
@@ -93,13 +119,24 @@ export class ConcreteRecord implements FDORecord {
         return this.conformsToProfiles
     }
 
-    has(attribute: PID): boolean {
-        return this.attributes.has(attribute)
+    has(attribute: PID | Attribute<never>): boolean {
+        return this.attributes.has(this.getPIDFromAttributOrPID(attribute))
     }
 
-    set(attribute: PID, value: RecordValue): void {
-        this.attributes.set(attribute, value)
-        this.removeReferencesFrom(attribute)
+    set<T extends RecordValue>(attribute: Attribute<T>, value: T): void
+    set(attribute: PID, value: RecordValue): void
+    set<T extends RecordValue = RecordValue>(
+        attribute: PID | Attribute<T>,
+        value: T,
+    ): void {
+        this.attributes.set(this.getPIDFromAttributOrPID(attribute), value)
+        this.removeReferencesFrom(this.getPIDFromAttributOrPID(attribute))
+    }
+
+    private getPIDFromAttributOrPID(attributeOrPID: PID | Attribute<never>) {
+        return typeof attributeOrPID === "string"
+            ? attributeOrPID
+            : attributeOrPID.pid
     }
 
     private removeReferencesFrom(from: PID) {
