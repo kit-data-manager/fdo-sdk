@@ -1,0 +1,16 @@
+{
+    "name": "@fdo-sdk/docs",
+    "version": "0.1.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "generate": "typedoc ../primitives/src/index.ts"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "module",
+    "devDependencies": {
+        "typedoc": "^0.28.20"
+    }
+}
