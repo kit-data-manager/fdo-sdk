@@ -254,15 +254,15 @@ describe("FDOGraph (via MapGraph)", () => {
             b.set("b/pid", "value-b")
             graph.addRecord(a)
             graph.addRecord(b)
-            expect(graph.toJSON()).toEqual([
-                { "a/pid": "value-a" },
-                { "b/pid": "value-b" },
-            ])
+            expect(graph.toJSON()).toEqual({
+                "LOCAL/1 - unpublished": { "a/pid": "value-a" },
+                "LOCAL/2 - unpublished": { "b/pid": "value-b" },
+            })
         })
 
-        it("returns an empty array for an empty graph", () => {
+        it("returns an empty record for an empty graph", () => {
             const graph: FDOGraph = new MapGraph()
-            expect(graph.toJSON()).toEqual([])
+            expect(graph.toJSON()).toEqual({})
         })
     })
 })

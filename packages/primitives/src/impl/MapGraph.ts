@@ -65,7 +65,7 @@ export class MapGraph implements FDOGraph {
 
     toJSON(): Record<string, Record<string, RecordValue>>[] {
         const entries = this.getRecords().map((record) => [
-            record.PID,
+            `${record.localID} - ${record.PID || "unpublished"}`,
             record.toJSON(),
         ])
         return Object.fromEntries(entries)
