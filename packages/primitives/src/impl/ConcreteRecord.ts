@@ -1,8 +1,4 @@
-import type {
-    Attribute,
-    FDORecord,
-    ProfileDefinition,
-} from "../interfaces/index.js"
+import type { Attribute, FDORecord } from "../interfaces/index.js"
 import {
     type WithMarkers,
     type LocalID,
@@ -21,9 +17,7 @@ export class ConcreteRecord implements FDORecord {
 
     private attributes: Map<PID, RecordValue> = new Map()
     private references: ReferenceDeclaration[] = []
-    private conformsToProfiles: Profile<
-        ProfileDefinition<ProfileAttributes>
-    >[] = []
+    private conformsToProfiles: PID[] = []
 
     constructor(localID: LocalID, pid?: PID) {
         this.localID = localID
@@ -55,13 +49,11 @@ export class ConcreteRecord implements FDORecord {
         this.addMap(new Map([[this.getPIDFromAttributOrPID(attribute), value]]))
     }
 
-    addProfile<P extends Profile<ProfileDefinition<ProfileAttributes>>>(
+    addProfile<P extends Profile<ProfileAttributes>>(
         profile: P,
-        attributes: P extends Profile<ProfileDefinition<infer I>>
-            ? WithMarkers<I>
-            : never,
+        attributes: P extends Profile<infer I> ? WithMarkers<I> : never,
     ): void {
-        this.conformsToProfiles.push(profile)
+        this.conformsToProfiles.push(profile.def.pid)
         const mapped = new Map<PID, RecordValue>()
         for (const [attributeName, value] of Object.entries(attributes)) {
             const attributePID = profile.mapAttributeNameToPID(attributeName)
@@ -156,7 +148,7 @@ export class ConcreteRecord implements FDORecord {
         return structuredClone(this.references)
     }
 
-    getProfiles(): Profile<ProfileDefinition<ProfileAttributes>>[] {
+    getProfiles(): PID[] {
         return this.conformsToProfiles
     }
 
@@ -199,9 +191,7 @@ export class ConcreteRecord implements FDORecord {
             {
                 localID: this.localID,
                 PID: this.PID,
-                profiles: this.conformsToProfiles.map(
-                    (profile) => profile.def.readableName,
-                ),
+                profiles: this.conformsToProfiles.join(", "),
                 attributes: Object.fromEntries(this.attributes),
                 references: this.references,
             },

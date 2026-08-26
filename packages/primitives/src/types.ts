@@ -15,13 +15,23 @@ export type ReferenceMarker = { mark: "reference" } & Omit<
 >
 export type AttributeMarker = KeepMarker | SkipMarker | ReferenceMarker
 
+/**
+ * @internal
+ */
 type AddMarker<T> = T extends (infer InnerType)[]
     ? AttributeMarker | (InnerType | ReferenceMarker)[]
     : T | AttributeMarker
+
+/**
+ * @internal
+ */
 export type WithMarkers<P extends ProfileAttributes> = {
     [key in keyof P]: AddMarker<P[key]>
 }
 
+/**
+ * @internal
+ */
 export type AttributeToPID<P extends ProfileAttributes> = {
     -readonly [key in keyof P]-?: PID
 }

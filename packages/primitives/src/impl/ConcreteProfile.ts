@@ -3,11 +3,11 @@ import type { Profile } from "../interfaces/Profile.js"
 import type { PID, ProfileAttributes } from "../types.js"
 
 export class ConcreteProfile<
-    D extends ProfileDefinition<ProfileAttributes>,
-> implements Profile<D> {
-    readonly def: D
+    A extends ProfileAttributes,
+> implements Profile<A> {
+    readonly def: ProfileDefinition<A>
 
-    constructor(def: D) {
+    constructor(def: ProfileDefinition<A>) {
         this.def = def
     }
 

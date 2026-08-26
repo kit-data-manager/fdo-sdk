@@ -21,8 +21,7 @@ const def: ProfileDefinition<HMCProfileAttributes> = {
 
 describe("Profile (via ConcreteProfile)", () => {
     it("exposes the definition via readonly def", () => {
-        const profile: Profile<ProfileDefinition<HMCProfileAttributes>> =
-            new ConcreteProfile(def)
+        const profile: Profile<HMCProfileAttributes> = new ConcreteProfile(def)
         expect(profile.def).toBe(def)
         expect(profile.def.pid).toBe("profile/pid")
         expect(profile.def.mapping.datasetName).toBe("some/pid1")

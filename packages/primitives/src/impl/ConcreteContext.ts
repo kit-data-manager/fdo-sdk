@@ -5,11 +5,11 @@ import type { FDORecord } from "../interfaces/index.js"
 import { ConcreteRecord } from "./ConcreteRecord.js"
 
 export class ConcreteContext implements Context {
-    localGraph = new MapGraph()
-    remoteGraph = new MapGraph()
+    readonly localGraph = new MapGraph()
+    readonly remoteGraph = new MapGraph()
 
-    newRecord(localID: LocalID, pid?: PID): FDORecord {
-        const record = new ConcreteRecord(localID, pid)
+    newRecord(localID: LocalID): FDORecord {
+        const record = new ConcreteRecord(localID)
         this.localGraph.addRecord(record)
         return record
     }

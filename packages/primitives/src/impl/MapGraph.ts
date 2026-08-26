@@ -63,7 +63,11 @@ export class MapGraph implements FDOGraph {
             .join("\n")
     }
 
-    toJSON(): Record<string, RecordValue>[] {
-        return this.getRecords().map((record) => record.toJSON())
+    toJSON(): Record<string, Record<string, RecordValue>>[] {
+        const entries = this.getRecords().map((record) => [
+            record.PID,
+            record.toJSON(),
+        ])
+        return Object.fromEntries(entries)
     }
 }

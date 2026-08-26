@@ -242,7 +242,7 @@ describe("FDORecord (via ConcreteRecord)", () => {
             })
             expect(r.get("some/pid1")).toBe("My Dataset")
             expect(r.get("some/pid2")).toEqual(["a1", "a2"])
-            expect(r.getProfiles()).toEqual([profile])
+            expect(r.getProfiles()).toEqual([profile.def.pid])
         })
 
         it("only adds provided attributes (optional ones are omitted)", () => {
@@ -383,7 +383,7 @@ describe("FDORecord (via ConcreteRecord)", () => {
                 datasetName: "DS",
                 authors: "a1",
             })
-            expect(r.toString()).toContain("HMC Profile")
+            expect(r.toString()).toContain("profile/pid")
         })
 
         it("prints an empty record without failing", () => {

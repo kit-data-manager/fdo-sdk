@@ -7,14 +7,31 @@ import type {
 } from "../types.js"
 import type { Attribute } from "../interfaces/index.js"
 
+/**
+ * To be used in {@link FDORecord.addProfile}. Marks a mandatory attribute as skipped, meaning it won't be added to the record.
+ *
+ * Use this marker to skip specifying mandatory profile attributes. This is dangerous! Prefer {@link keep} instead, if possible.
+ */
 export function skip(): SkipMarker {
     return { mark: "skip" }
 }
 
+/**
+ * To be used in {@link FDORecord.addProfile}. Marks a mandatory attribute as kept, assuming that this attribute is already present in the record.
+ *
+ * ⚠️ If the attribute is not present yet in the record, {@link FDORecord.addProfile} will throw.
+ *
+ * @throws when the attribute is not present in the record yet
+ */
 export function keep(): KeepMarker {
     return { mark: "keep" }
 }
 
+/**
+ * To be used in {@link FDORecord.addProfile}. Adds a reference to another record.
+ * @param inverseAttribute The {@link PID} or {@link Attribute} instance of the attribute on the remote record that will link bank to this record
+ * @param targetRecord The {@link PID} or local identifier of the remote record
+ */
 export function reference(
     inverseAttribute: PID | Attribute<never>,
     targetRecord: LocalID | PID,
@@ -29,6 +46,9 @@ export function reference(
     }
 }
 
+/**
+ * @internal
+ */
 export function isKeep(input: unknown): input is KeepMarker {
     return (
         input !== null &&
@@ -38,6 +58,9 @@ export function isKeep(input: unknown): input is KeepMarker {
     )
 }
 
+/**
+ * @internal
+ */
 export function isSkip(input: unknown): input is SkipMarker {
     return (
         input !== null &&
@@ -47,6 +70,9 @@ export function isSkip(input: unknown): input is SkipMarker {
     )
 }
 
+/**
+ * @internal
+ */
 export function isReference(input: unknown): input is ReferenceMarker {
     return (
         input !== null &&

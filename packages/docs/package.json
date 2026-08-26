@@ -4,13 +4,15 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "generate": "typedoc ../primitives/src/index.ts"
+        "generate": "typedoc ../primitives/src/index.ts",
+        "serve": "serve generated/"
     },
     "keywords": [],
     "author": "",
     "license": "ISC",
     "type": "module",
     "devDependencies": {
+        "serve": "^14.2.6",
         "typedoc": "^0.28.20"
     }
 }

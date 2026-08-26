@@ -1,0 +1,12 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "entryPoints": ["../primitives/src/index.ts"],
+    "out": "generated",
+    "tsconfig": "../primitives/tsconfig.json",
+    "excludeInternal": true,
+    "externalSymbolLinkMappings": {
+        "typescript": {
+            "JSON.stringify": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify"
+        }
+    }
+}
