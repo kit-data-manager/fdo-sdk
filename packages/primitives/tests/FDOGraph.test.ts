@@ -138,7 +138,7 @@ describe("FDOGraph (via MapGraph)", () => {
             graph.addRecord(a)
             graph.addRecord(b)
 
-            a.addReference("has/data", "belongs/to", b)
+            a.addReferenceBidi("has/data", "belongs/to", b)
 
             graph.build()
 
@@ -152,7 +152,7 @@ describe("FDOGraph (via MapGraph)", () => {
             graph.addRecord(a)
             graph.addRecord(b)
 
-            a.addReference("has/data", "belongs/to", b)
+            a.addReferenceBidi("has/data", "belongs/to", b)
 
             graph.build()
 
@@ -166,7 +166,7 @@ describe("FDOGraph (via MapGraph)", () => {
             graph.addRecord(a)
             graph.addRecord(b)
 
-            a.addReference("has/data", "belongs/to", b)
+            a.addReferenceBidi("has/data", "belongs/to", b)
 
             graph.build()
 
@@ -180,7 +180,7 @@ describe("FDOGraph (via MapGraph)", () => {
             graph.addRecord(a)
             graph.addRecord(b)
 
-            a.addReference("has/data", "belongs/to", b)
+            a.addReferenceBidi("has/data", "belongs/to", b)
             graph.build()
 
             expect(a.get("has/data")).toBe("rec/b")
@@ -197,8 +197,8 @@ describe("FDOGraph (via MapGraph)", () => {
             graph.addRecord(c)
             graph.addRecord(b)
 
-            a.addReference("has/data", "belongs/to", b)
-            c.addReference("has/data", "belongs/to", b)
+            a.addReferenceBidi("has/data", "belongs/to", b)
+            c.addReferenceBidi("has/data", "belongs/to", b)
 
             graph.build()
 
@@ -210,7 +210,7 @@ describe("FDOGraph (via MapGraph)", () => {
             const a: FDORecord = new ConcreteRecord("LOCAL/1", "rec/a")
             graph.addRecord(a)
 
-            a.addReference("has/data", "belongs/to", "LOCAL/missing")
+            a.addReference("has/data", "LOCAL/missing")
 
             expect(() => graph.build()).not.toThrow()
             expect(a.get("has/data")).toBe("LOCAL/missing")
@@ -221,7 +221,7 @@ describe("FDOGraph (via MapGraph)", () => {
             const a: FDORecord = new ConcreteRecord("LOCAL/1", "rec/a")
             graph.addRecord(a)
 
-            a.addReference("has/data", "belongs/to", "LOCAL/missing")
+            a.addReference("has/data", "LOCAL/missing")
 
             expect(() => graph.build()).not.toThrow()
             expect(() => graph.build()).toThrow()

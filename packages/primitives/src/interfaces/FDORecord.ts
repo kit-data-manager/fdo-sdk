@@ -77,7 +77,31 @@ export interface FDORecord extends ReadOnlyFDORecord {
         profile: P,
         attributes: P extends Profile<infer A> ? WithMarkers<A> : never,
     ): void
+
+    /**
+     * Add a unidirectional reference from this record to another record. The target record must either
+     * be known locally or be resolvable via its PID
+     * @param fromAttribute The attribute of this record where the reference will be placed
+     * @param toRecord local ID ({@link LocalID}) or {@link PID} of the referenced record. Must either
+     * be known locally or be resolvable via its PID
+     * @see {@link FDORecord.addReferenceBidi} for bidirectional references
+     */
     addReference(
+        fromAttribute: PID | Attribute<PID | PID[]>,
+        toRecord: PID | LocalID | FDORecord,
+    ): void
+
+    /**
+     * Add a bidirectional reference from this record to another record and back.
+     * The target record must be in the current local or remote graph in order to
+     * create the back-reference
+     * @param fromAttribute The attribute of this record where the reference will be placed
+     * @param toAttribute The attribute of the target record where the back-reference will be placed
+     * @param toRecord local ID ({@link LocalID}) or {@link PID} of the referenced record. Must either
+     * be known locally or be resolvable via its PID
+     * @see {@link FDORecord.addReference} for unidirectional references
+     */
+    addReferenceBidi(
         fromAttribute: PID | Attribute<PID | PID[]>,
         toAttribute: PID | Attribute<PID | PID[]>,
         toRecord: PID | LocalID | FDORecord,

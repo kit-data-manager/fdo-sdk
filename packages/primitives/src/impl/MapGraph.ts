@@ -48,9 +48,9 @@ export class MapGraph implements FDOGraph {
         for (const record of this.recordsByLocalID.values()) {
             for (const reference of record.getReferences()) {
                 const target = this.getRecord(reference.toRecord)
-                if (!target) continue
+                if (!target || reference.direction === "uni") continue
                 target.addAttribute(
-                    reference.toAttribute,
+                    reference.inverseAttribute,
                     record.PID ?? record.localID,
                 )
             }

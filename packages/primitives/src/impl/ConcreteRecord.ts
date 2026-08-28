@@ -68,11 +68,7 @@ export class ConcreteRecord implements FDORecord {
             } else if (isSkip(value)) {
                 // continue
             } else if (isReference(value)) {
-                this.addReference(
-                    attributePID,
-                    value.toAttribute,
-                    value.toRecord,
-                )
+                this.addReferenceDirect(attributePID, value.ref)
             } else if (
                 Array.isArray(value) &&
                 value.some((element) => isReference(element))
@@ -85,11 +81,7 @@ export class ConcreteRecord implements FDORecord {
                 )
 
                 for (const reference of references) {
-                    this.addReference(
-                        attributePID,
-                        reference.toAttribute,
-                        reference.toRecord,
-                    )
+                    this.addReferenceDirect(attributePID, reference.ref)
                 }
 
                 mapped.set(attributePID, primitives)
@@ -116,9 +108,21 @@ export class ConcreteRecord implements FDORecord {
         this.addMap(mapped as Map<PID, RecordValue>)
     }
 
+    private addReferenceDirect(
+        fromAttribute: PID,
+        reference:
+            | Omit<ReferenceDeclaration & { direction: "uni" }, "fromAttribute">
+            | Omit<
+                  ReferenceDeclaration & { direction: "bidi" },
+                  "fromAttribute"
+              >,
+    ): void {
+        this.references.push({ ...reference, fromAttribute })
+        this.addAttribute(fromAttribute, reference.toRecord)
+    }
+
     addReference(
         fromAttribute: PID | Attribute<PID | PID[]>,
-        toAttribute: PID | Attribute<PID | PID[]>,
         toRecord: PID | LocalID | FDORecord,
     ): void {
         const target =
@@ -127,8 +131,27 @@ export class ConcreteRecord implements FDORecord {
                 : toRecord
 
         this.references.push({
+            direction: "uni",
             fromAttribute: this.getPIDFromAttributOrPID(fromAttribute),
-            toAttribute: this.getPIDFromAttributOrPID(toAttribute),
+            toRecord: target,
+        })
+        this.addAttribute(fromAttribute, target)
+    }
+
+    addReferenceBidi(
+        fromAttribute: PID | Attribute<PID | PID[]>,
+        inverseAttribute: PID | Attribute<PID | PID[]>,
+        toRecord: PID | LocalID | FDORecord,
+    ): void {
+        const target =
+            typeof toRecord === "object"
+                ? (toRecord.PID ?? toRecord.localID)
+                : toRecord
+
+        this.references.push({
+            direction: "bidi",
+            fromAttribute: this.getPIDFromAttributOrPID(fromAttribute),
+            inverseAttribute: this.getPIDFromAttributOrPID(inverseAttribute),
             toRecord: target,
         })
         this.addAttribute(fromAttribute, target)

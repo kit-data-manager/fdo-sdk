@@ -28,21 +28,38 @@ export function keep(): KeepMarker {
 }
 
 /**
- * To be used in {@link FDORecord.addProfile}. Adds a reference to another record.
+ * To be used in {@link FDORecord.addProfile}. Adds a reference from this record to another record.
+ * @param targetRecord The {@link PID} or local identifier of the remote record
+ */
+export function reference(targetRecord: LocalID | PID): ReferenceMarker {
+    return {
+        mark: "reference",
+        ref: {
+            direction: "uni",
+            toRecord: targetRecord,
+        },
+    }
+}
+
+/**
+ * To be used in {@link FDORecord.addProfile}. Adds a reference from this record to another record and back.
  * @param inverseAttribute The {@link PID} or {@link Attribute} instance of the attribute on the remote record that will link bank to this record
  * @param targetRecord The {@link PID} or local identifier of the remote record
  */
-export function reference(
+export function referenceBidi(
     inverseAttribute: PID | Attribute<never>,
     targetRecord: LocalID | PID,
 ): ReferenceMarker {
     return {
         mark: "reference",
-        toAttribute:
-            typeof inverseAttribute === "string"
-                ? inverseAttribute
-                : inverseAttribute.pid,
-        toRecord: targetRecord,
+        ref: {
+            direction: "bidi",
+            inverseAttribute:
+                typeof inverseAttribute === "string"
+                    ? inverseAttribute
+                    : inverseAttribute.pid,
+            toRecord: targetRecord,
+        },
     }
 }
 
