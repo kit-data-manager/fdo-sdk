@@ -48,7 +48,11 @@ export class MapGraph implements FDOGraph {
         for (const record of this.recordsByLocalID.values()) {
             for (const reference of record.getReferences()) {
                 const target = this.getRecord(reference.toRecord)
-                if (!target || reference.direction === "uni") continue
+                if (reference.direction === "uni") continue
+                if (!target)
+                    throw new Error(
+                        `could not create bidirectional reference to record ${reference.toRecord} because it was not found in the local graph`,
+                    )
                 target.addAttribute(
                     reference.inverseAttribute,
                     record.PID ?? record.localID,

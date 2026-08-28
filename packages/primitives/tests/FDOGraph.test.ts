@@ -205,14 +205,32 @@ describe("FDOGraph (via MapGraph)", () => {
             expect(b.get("belongs/to")).toEqual(["rec/a", "rec/c"])
         })
 
-        it("skips references whose target is not part of the graph", () => {
+        it("does not add back-references for unidirectional references", () => {
+            const graph: FDOGraph = new MapGraph()
+            const a: FDORecord = new ConcreteRecord("LOCAL/1", "rec/a")
+            const c: FDORecord = new ConcreteRecord("LOCAL/3", "rec/c")
+            const b: FDORecord = new ConcreteRecord("LOCAL/2", "rec/b")
+            graph.addRecord(a)
+            graph.addRecord(c)
+            graph.addRecord(b)
+
+            a.addReference("has/data", b)
+            c.addReference("has/data", b)
+
+            graph.build()
+
+            expect(b.has("belongs/to")).toBe(false)
+            expect(b.getAll().size).toBe(0)
+        })
+
+        it("throws on bidirectional references to records that are not in the local graph", () => {
             const graph: FDOGraph = new MapGraph()
             const a: FDORecord = new ConcreteRecord("LOCAL/1", "rec/a")
             graph.addRecord(a)
 
-            a.addReference("has/data", "LOCAL/missing")
+            a.addReferenceBidi("has/data", "is/dataFor", "LOCAL/missing")
 
-            expect(() => graph.build()).not.toThrow()
+            expect(() => graph.build()).toThrow()
             expect(a.get("has/data")).toBe("LOCAL/missing")
         })
 
