@@ -4,13 +4,14 @@ import {
     DataResourceProfile,
     creepExperimentAttributes,
 } from "./generated/creepProfiles.js"
-import { createMapping } from "@fdo-sdk/primitives"
-import type { FDORecord } from "@fdo-sdk/primitives"
-import { reference } from "@fdo-sdk/primitives"
-import { skip } from "@fdo-sdk/primitives"
+import {
+    createMapping,
+    type FDORecord,
+    skip,
+    referenceBidi,
+} from "@fdo-sdk/primitives"
 import experimentsData from "../assets/creep-experiments.json" with { type: "json" }
 import * as fs from "node:fs"
-
 type Experiment = (typeof experimentsData)["creepExperiments"][number]
 type DataFile = Experiment["dataResources"][number]
 
@@ -46,7 +47,7 @@ function addCreepExperiment(record: FDORecord, experiment: Experiment) {
         percentageCreepExtension: experiment.percentageCreepExtension,
         SingleCrystalOrientation: experiment.SingleCrystalOrientation,
         hasData: experiment.dataResources.map((file) =>
-            reference(
+            referenceBidi(
                 creepExperimentAttributes.hasMetadata,
                 `LOCAL/${file.id}`,
             ),
@@ -69,3 +70,4 @@ fs.writeFile(
     JSON.stringify(context.localGraph, null, 2),
     () => {},
 )
+console.log("Resulting graph was written to result.json")
