@@ -1,6 +1,9 @@
-import type { FDOGraph, ReadOnlyFDOGraph } from "./FDOGraph.js"
-import type { LocalID } from "../types.js"
-import type { FDORecord } from "./FDORecord.js"
+import type {
+    FDOGraph,
+    ReadOnlyFDOGraph,
+    LocalID,
+    FDORecord,
+} from "@fdo-sdk/primitives"
 
 /**
  * The context of a data to FDO record mapping. Holds the local graph, which
@@ -8,7 +11,7 @@ import type { FDORecord } from "./FDORecord.js"
  * holds the remote graph, containing all records from the mapping that have
  * been published in the past.
  */
-export interface Context {
+export interface MappingContext {
     /**
      * The local graph should contain all the FDOs that should be or should stay published
      */
