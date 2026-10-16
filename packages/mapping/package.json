@@ -12,15 +12,19 @@
     "license": "ISC",
     "type": "module",
     "devDependencies": {
+        "@fdo-sdk/primitives": "workspace:*",
         "@types/node": "^26.2.0",
         "@vitest/coverage-v8": "4.1.10",
+        "openapi-typescript": "^7.13.0",
         "tsdown": "^0.22.14",
         "typescript": "^6.0.3",
-        "vitest": "^4.1.10",
-        "@fdo-sdk/primitives": "workspace:*"
+        "vitest": "^4.1.10"
     },
     "exports": {
         ".": "./dist/index.mjs",
         "./package.json": "./package.json"
+    },
+    "dependencies": {
+        "openapi-fetch": "^0.17.0"
     }
 }
