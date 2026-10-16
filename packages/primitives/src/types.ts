@@ -3,7 +3,7 @@
  * Care must be taken to ensure the local identifier is always unique and always the same for each
  * thing that will be represented as an FDO record.
  */
-export type LocalID = `LOCAL/${string}`
+export type LocalID = `LOCAL/${string}` | `EXTERNAL/${string}`
 
 /**
  * The PID is the globally unique and persistent identifier of a published FDO record. Its structure
