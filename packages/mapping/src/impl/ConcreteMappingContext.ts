@@ -1,17 +1,17 @@
 import type { MappingContext } from "../interfaces/MappingContext.js"
 import {
-    MapGraph,
+    MappedGraph,
     type LocalID,
     type FDORecord,
-    ConcreteRecord,
+    ConcreteMappedFDORecord,
 } from "@fdo-sdk/primitives"
 
 export class ConcreteMappingContext implements MappingContext {
-    readonly localGraph = new MapGraph()
-    readonly remoteGraph = new MapGraph()
+    readonly localGraph = new MappedGraph()
+    readonly remoteGraph = new MappedGraph()
 
     newRecord(localID: LocalID): FDORecord {
-        const record = new ConcreteRecord(localID)
+        const record = new ConcreteMappedFDORecord(localID)
         this.localGraph.addRecord(record)
         return record
     }

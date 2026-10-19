@@ -1,4 +1,5 @@
 export { ConcreteMappedFDORecord } from "./ConcreteMappedFDORecord.js"
+export { ConcreteFDORecord } from "./ConcreteFDORecord.js"
 export { ConcreteProfile } from "./ConcreteProfile.js"
 export { MappedGraph } from "./MappedGraph.js"
 export * from "./markers.js"

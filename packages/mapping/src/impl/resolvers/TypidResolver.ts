@@ -1,0 +1,65 @@
+import type { ResolveAdapter } from "../../interfaces/index.js"
+import {
+    type PID,
+    type FDOGraph,
+    type PublishedFDORecord,
+    type PublishedMappedFDORecord,
+} from "@fdo-sdk/primitives"
+import { TypidClient, type TypidRecord } from "../clients/typid/TypidClient.js"
+import { ConcreteFDORecord } from "@fdo-sdk/primitives"
+import { MappedGraph } from "@fdo-sdk/primitives"
+
+const typidClient = new TypidClient()
+
+export class TypidResolver implements ResolveAdapter {
+    async resolveMappingRecords(
+        mappingPID: PID,
+    ): Promise<FDOGraph<PublishedMappedFDORecord>> {
+        const graph = new MappedGraph<PublishedMappedFDORecord>()
+
+        const rootRecord = await this.resolveRecord(mappingPID)
+        if (!rootRecord) {
+            throw new Error("Mapping record not found")
+        }
+
+        return graph
+    }
+
+    async resolveRecord(
+        recordPID: PID,
+    ): Promise<PublishedFDORecord | undefined> {
+        let typidRecord
+        try {
+            typidRecord = await typidClient.fetchRecord(recordPID)
+        } catch (e) {
+            throw new Error("Could not fetch record", { cause: e })
+        }
+
+        if (typidRecord) {
+            return this.typidRecordToPIDRecord(typidRecord)
+        } else {
+            return undefined
+        }
+    }
+
+    private typidRecordToPIDRecord(
+        typidRecord: TypidRecord,
+    ): PublishedFDORecord {
+        const record = new ConcreteFDORecord(
+            typidRecord.pid,
+        ) as PublishedFDORecord
+
+        const attributes = Object.values(typidRecord.entries)
+            .filter((entry) => entry.length > 0)
+            .map((entry) => {
+                const values = entry.map((value) => value.value)
+                return { key: entry[0]!.key, value: values }
+            })
+
+        for (const attribute of attributes) {
+            record.addAttribute(attribute.key, attribute.value)
+        }
+
+        return record
+    }
+}

@@ -1,19 +1,19 @@
 import { describe, it, expect } from "vitest"
-import type { FDOGraph } from "../src/index.js"
+import type { FDOGraph, MappedFDORecord } from "../src/index.js"
 import type { FDORecord } from "../src/index.js"
 import { MappedGraph, ConcreteMappedFDORecord } from "../src/index.js"
 
-describe("FDOGraph (via MappedGraph)", () => {
+describe("MappedGraph", () => {
     describe("construction", () => {
         it("starts with no records", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             expect(graph.getRecords()).toEqual([])
         })
     })
 
     describe("addRecord / getRecords", () => {
         it("returns all added records", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const a: FDORecord = new ConcreteMappedFDORecord("LOCAL/1", "rec/a")
             const b: FDORecord = new ConcreteMappedFDORecord("LOCAL/2")
             graph.addRecord(a)
@@ -22,7 +22,7 @@ describe("FDOGraph (via MappedGraph)", () => {
         })
 
         it("returns a new array each time (mutating it does not affect the graph)", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             graph.addRecord(new ConcreteMappedFDORecord("LOCAL/1"))
             const records = graph.getRecords()
             records.pop()
@@ -30,7 +30,7 @@ describe("FDOGraph (via MappedGraph)", () => {
         })
 
         it("replaces an existing record with the same localID", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             graph.addRecord(new ConcreteMappedFDORecord("LOCAL/1", "rec/a"))
             const replacement: FDORecord = new ConcreteMappedFDORecord(
                 "LOCAL/1",
@@ -52,28 +52,28 @@ describe("FDOGraph (via MappedGraph)", () => {
 
     describe("getRecord", () => {
         it("finds a record by localID", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const r: FDORecord = new ConcreteMappedFDORecord("LOCAL/1", "rec/a")
             graph.addRecord(r)
             expect(graph.getRecord("LOCAL/1")).toBe(r)
         })
 
         it("finds a record by PID", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const r: FDORecord = new ConcreteMappedFDORecord("LOCAL/1", "rec/a")
             graph.addRecord(r)
             expect(graph.getRecord("rec/a")).toBe(r)
         })
 
         it("finds a PID-less record by localID", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const r: FDORecord = new ConcreteMappedFDORecord("LOCAL/1")
             graph.addRecord(r)
             expect(graph.getRecord("LOCAL/1")).toBe(r)
         })
 
         it("returns undefined for an unknown id", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             graph.addRecord(new ConcreteMappedFDORecord("LOCAL/1", "rec/a"))
             expect(graph.getRecord("LOCAL/missing")).toBeUndefined()
             expect(graph.getRecord("rec/missing")).toBeUndefined()
@@ -82,14 +82,14 @@ describe("FDOGraph (via MappedGraph)", () => {
 
     describe("removeRecord", () => {
         it("removes a PID-less record by localID", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             graph.addRecord(new ConcreteMappedFDORecord("LOCAL/1"))
             graph.removeRecord("LOCAL/1")
             expect(graph.getRecords()).toEqual([])
         })
 
         it("removes a record by PID and clears both lookups", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             graph.addRecord(new ConcreteMappedFDORecord("LOCAL/1", "rec/a"))
             graph.removeRecord("rec/a")
             expect(graph.getRecords()).toEqual([])
@@ -98,7 +98,7 @@ describe("FDOGraph (via MappedGraph)", () => {
         })
 
         it("only removes the matching record when multiple exist", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const keep: FDORecord = new ConcreteMappedFDORecord(
                 "LOCAL/2",
                 "rec/b",
@@ -110,7 +110,7 @@ describe("FDOGraph (via MappedGraph)", () => {
         })
 
         it("does nothing for an unknown id", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const r: FDORecord = new ConcreteMappedFDORecord("LOCAL/1")
             graph.addRecord(r)
             expect(() => graph.removeRecord("rec/missing")).not.toThrow()
@@ -120,7 +120,7 @@ describe("FDOGraph (via MappedGraph)", () => {
 
     describe("findRecord", () => {
         it("returns the first record matching the predicate", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const a: FDORecord = new ConcreteMappedFDORecord("LOCAL/1", "rec/a")
             const b: FDORecord = new ConcreteMappedFDORecord("LOCAL/2", "rec/b")
             graph.addRecord(a)
@@ -129,7 +129,7 @@ describe("FDOGraph (via MappedGraph)", () => {
         })
 
         it("returns undefined when no record matches", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             graph.addRecord(new ConcreteMappedFDORecord("LOCAL/1"))
             expect(graph.findRecord(() => false)).toBeUndefined()
         })
@@ -137,7 +137,7 @@ describe("FDOGraph (via MappedGraph)", () => {
 
     describe("build", () => {
         it("adds a back-reference via the toAttribute on the target record", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const a: FDORecord = new ConcreteMappedFDORecord("LOCAL/1", "rec/a")
             const b: FDORecord = new ConcreteMappedFDORecord("LOCAL/2", "rec/b")
             graph.addRecord(a)
@@ -151,7 +151,7 @@ describe("FDOGraph (via MappedGraph)", () => {
         })
 
         it("uses the source record's localID as back-reference when it has no PID", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const a: FDORecord = new ConcreteMappedFDORecord("LOCAL/1")
             const b: FDORecord = new ConcreteMappedFDORecord("LOCAL/2", "rec/b")
             graph.addRecord(a)
@@ -165,7 +165,7 @@ describe("FDOGraph (via MappedGraph)", () => {
         })
 
         it("resolves the target by localID", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const a: FDORecord = new ConcreteMappedFDORecord("LOCAL/1", "rec/a")
             const b: FDORecord = new ConcreteMappedFDORecord("LOCAL/2")
             graph.addRecord(a)
@@ -179,7 +179,7 @@ describe("FDOGraph (via MappedGraph)", () => {
         })
 
         it("leaves the forward reference in place on the source record", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const a: FDORecord = new ConcreteMappedFDORecord("LOCAL/1", "rec/a")
             const b: FDORecord = new ConcreteMappedFDORecord("LOCAL/2", "rec/b")
             graph.addRecord(a)
@@ -194,7 +194,7 @@ describe("FDOGraph (via MappedGraph)", () => {
         })
 
         it("concatenates back-references from multiple sources", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const a: FDORecord = new ConcreteMappedFDORecord("LOCAL/1", "rec/a")
             const c: FDORecord = new ConcreteMappedFDORecord("LOCAL/3", "rec/c")
             const b: FDORecord = new ConcreteMappedFDORecord("LOCAL/2", "rec/b")
@@ -211,7 +211,7 @@ describe("FDOGraph (via MappedGraph)", () => {
         })
 
         it("does not add back-references for unidirectional references", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const a: FDORecord = new ConcreteMappedFDORecord("LOCAL/1", "rec/a")
             const c: FDORecord = new ConcreteMappedFDORecord("LOCAL/3", "rec/c")
             const b: FDORecord = new ConcreteMappedFDORecord("LOCAL/2", "rec/b")
@@ -229,7 +229,7 @@ describe("FDOGraph (via MappedGraph)", () => {
         })
 
         it("throws on bidirectional references to records that are not in the local graph", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const a: FDORecord = new ConcreteMappedFDORecord("LOCAL/1", "rec/a")
             graph.addRecord(a)
 
@@ -240,7 +240,7 @@ describe("FDOGraph (via MappedGraph)", () => {
         })
 
         it("throws when built twice or more", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const a: FDORecord = new ConcreteMappedFDORecord("LOCAL/1", "rec/a")
             graph.addRecord(a)
 
@@ -254,7 +254,7 @@ describe("FDOGraph (via MappedGraph)", () => {
 
     describe("toString", () => {
         it("prints all record toStrings separated by newlines", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const a: FDORecord = new ConcreteMappedFDORecord("LOCAL/1", "rec/a")
             const b: FDORecord = new ConcreteMappedFDORecord("LOCAL/2")
             graph.addRecord(a)
@@ -263,14 +263,14 @@ describe("FDOGraph (via MappedGraph)", () => {
         })
 
         it("is empty for an empty graph", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             expect(graph.toString()).toBe("")
         })
     })
 
     describe("toJSON", () => {
         it("returns an array of the record JSON objects", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             const a: FDORecord = new ConcreteMappedFDORecord("LOCAL/1")
             const b: FDORecord = new ConcreteMappedFDORecord("LOCAL/2")
             a.set("a/pid", "value-a")
@@ -284,7 +284,7 @@ describe("FDOGraph (via MappedGraph)", () => {
         })
 
         it("returns an empty record for an empty graph", () => {
-            const graph: FDOGraph = new MappedGraph()
+            const graph: FDOGraph<MappedFDORecord> = new MappedGraph()
             expect(graph.toJSON()).toEqual({})
         })
     })
