@@ -1,4 +1,9 @@
-import type { Attribute, FDORecord } from "../interfaces/index.js"
+import type {
+    Attribute,
+    FDORecord,
+    MappedFDORecord,
+    PublishedFDORecord,
+} from "../interfaces/index.js"
 import {
     type WithMarkers,
     type LocalID,
@@ -11,7 +16,7 @@ import { toArray } from "../utils.js"
 import type { Profile } from "../interfaces/Profile.js"
 import { isKeep, isReference, isSkip } from "./markers.js"
 
-export class ConcreteRecord implements FDORecord {
+export class ConcreteMappedFDORecord implements MappedFDORecord {
     readonly localID: LocalID
     readonly PID: PID | undefined
 
@@ -123,12 +128,18 @@ export class ConcreteRecord implements FDORecord {
 
     addReference(
         fromAttribute: PID | Attribute<PID | PID[]>,
-        toRecord: PID | LocalID | FDORecord,
+        toRecord: PID | LocalID | MappedFDORecord | PublishedFDORecord,
     ): void {
         const target =
             typeof toRecord === "object"
-                ? (toRecord.PID ?? toRecord.localID)
+                ? (toRecord.PID ??
+                  ("localID" in toRecord ? toRecord.localID : undefined))
                 : toRecord
+
+        if (target === undefined)
+            throw new Error(
+                "Cannot add reference to target because target has no PID and no LocalID",
+            )
 
         this.references.push({
             direction: "uni",
@@ -141,12 +152,17 @@ export class ConcreteRecord implements FDORecord {
     addReferenceBidi(
         fromAttribute: PID | Attribute<PID | PID[]>,
         inverseAttribute: PID | Attribute<PID | PID[]>,
-        toRecord: PID | LocalID | FDORecord,
+        toRecord: PID | LocalID | MappedFDORecord,
     ): void {
         const target =
             typeof toRecord === "object"
                 ? (toRecord.PID ?? toRecord.localID)
                 : toRecord
+
+        if (target === undefined)
+            throw new Error(
+                "Cannot add reference to target because target has no PID and no LocalID",
+            )
 
         this.references.push({
             direction: "bidi",
