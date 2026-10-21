@@ -1,0 +1,31 @@
+{
+    "$schema": "./node_modules/nx/schemas/nx-schema.json",
+    "namedInputs": {
+        "default": ["{projectRoot}/**/*", "sharedGlobals"],
+        "production": [
+            "default",
+            "!{projectRoot}/tests/**/*",
+            "!{projectRoot}/coverage/**/*",
+            "!{projectRoot}/**/*.test.ts",
+            "!{projectRoot}/**/*.spec.ts",
+            "!{projectRoot}/vitest.config.ts"
+        ],
+        "sharedGlobals": [
+            "{workspaceRoot}/package.json",
+            "{workspaceRoot}/pnpm-lock.yaml"
+        ]
+    },
+    "targetDefaults": {
+        "build": {
+            "dependsOn": ["^build"],
+            "cache": true,
+            "inputs": ["production", "^production"],
+            "outputs": ["{projectRoot}/dist"]
+        },
+        "test": {
+            "cache": true,
+            "inputs": ["default", "^production"],
+            "outputs": ["{projectRoot}/coverage"]
+        }
+    }
+}

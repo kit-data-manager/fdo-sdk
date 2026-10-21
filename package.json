@@ -2,16 +2,18 @@
   "name": "fdo-sdk",
   "version": "0.1.0",
   "description": "",
+  "private": true,
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "lerna run build",
+    "build:stream": "lerna run build --stream",
+    "test": "lerna run test",
+    "test:stream": "lerna run test --stream"
   },
   "keywords": [],
   "author": "",
   "license": "Apache-2.0",
-  "workspaces": [
-    "packages/*"
-  ],
+  "packageManager": "pnpm@11.18.0",
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
@@ -21,6 +23,8 @@
   },
   "type": "module",
   "devDependencies": {
+    "lerna": "^10.1.1",
+    "nx": "^23.3.0",
     "prettier": "^3.9.6"
   }
 }

@@ -4,6 +4,7 @@
     "description": "",
     "main": "index.js",
     "scripts": {
+        "build": "typedoc",
         "generate": "typedoc ../primitives/src/index.ts",
         "serve": "serve generated/"
     },
@@ -11,7 +12,17 @@
     "author": "",
     "license": "ISC",
     "type": "module",
+    "nx": {
+        "targets": {
+            "build": {
+                "outputs": [
+                    "{projectRoot}/generated"
+                ]
+            }
+        }
+    },
     "devDependencies": {
+        "@fdo-sdk/primitives": "workspace:*",
         "serve": "^14.2.6",
         "typedoc": "^0.28.20"
     }

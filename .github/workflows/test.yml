@@ -24,6 +24,5 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Test primitives
-        working-directory: packages/primitives
+      - name: Test all packages
         run: pnpm test
