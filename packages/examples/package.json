@@ -6,7 +6,9 @@
     "scripts": {
         "build": "tsc",
         "build-and-run": "pnpm run build && pnpm run run",
-        "run": "node ./dist/example.js"
+        "run": "node ./dist/example.js",
+        "run:mapping": "node ./dist/localTestingBackend.js",
+        "build-and-run:mapping": "pnpm run build && pnpm run run:mapping"
     },
     "keywords": [],
     "author": "",
@@ -17,6 +19,7 @@
         "typescript": "^6.0.3"
     },
     "dependencies": {
+        "@fdo-sdk/mapping": "workspace:*",
         "@fdo-sdk/primitives": "workspace:*"
     }
 }

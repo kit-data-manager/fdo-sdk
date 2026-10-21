@@ -6,7 +6,7 @@ import type { LocalID, PID, RecordValue } from "../types.js"
  * edge is a reference from one record to another.
  */
 export interface FDOGraph<
-    RecordType extends FDORecord,
+    RecordType extends FDORecord = FDORecord,
 > extends ReadOnlyFDOGraph<RecordType> {
     /**
      * Add a new record to the graph
@@ -31,7 +31,9 @@ export interface FDOGraph<
  * Represents a graph of FDO records, where each node is a record and each
  * edge is a reference from one record to another. Read-only.
  */
-export interface ReadOnlyFDOGraph<RecordType extends ReadOnlyFDORecord> {
+export interface ReadOnlyFDOGraph<
+    RecordType extends ReadOnlyFDORecord = FDORecord,
+> {
     /**
      * Get a flat list of all record in this graph
      */
