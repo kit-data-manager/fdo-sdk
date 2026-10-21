@@ -5,22 +5,27 @@
  * The example walks through the full lifecycle of a mapping:
  *
  *   1. Building a local graph of FDO records from two profiles
- *   2. Realizing bidirectional references via `FDOGraph.build()`
- *   3. Publishing the graph through a `PublishAdapter`
+ *   2. Realizing bidirectional references via `MappingContext.build()`
+ *   3. Publishing the built mapping result through a `PublishAdapter`
  *   4. Resolving records again through a `ResolveAdapter`
- *   5. Snapshot semantics of resolved records
- *   6. An update cycle (modify + add records, republish, PIDs stay stable)
- *   7. Isolation between mappings (scoped graphs, shared store)
- *   8. Resetting the store between test runs
+ *   5. The high level FDO record of the mapping and the published records,
+ *      which hold no local IDs except their own
+ *   6. Snapshot semantics of resolved records
+ *   7. An update cycle (the same mapping procedure runs a second time on
+ *      changed source data: modify, add and delete records, republish, PIDs
+ *      stay stable)
+ *   8. Isolation between mappings (scoped graphs, shared store)
+ *   9. Publishing without a mapping (a single record or a whole graph)
+ *   10. Resetting the store between test runs
  *
  * Everything is typed against the interfaces (`MappingContext`,
- * `PublishAdapter`, `ResolveAdapter`, `FDOGraph`, `FDORecord`, `Profile`, ...)
- * so the example would work unchanged with a different context or backend
- * implementation. The only concrete classes used are `ConcreteMappingContext`
- * (constructed, then consumed as `MappingContext`), `ConcreteProfile` (the
- * standard way to define a profile) and `LocalTestingBackend` itself — the
- * latter also exposes `resetStore()` as a static method that no interface
- * covers.
+ * `MappingResult`, `PublishAdapter`, `ResolveAdapter`, `FDOGraph`,
+ * `FDORecord`, `Profile`, ...) so the example would work unchanged with a
+ * different context or backend implementation. The only concrete classes used
+ * are `ConcreteMappingContext` (constructed, then consumed as
+ * `MappingContext`), `ConcreteProfile` (the standard way to define a
+ * profile) and `LocalTestingBackend` itself — the latter also exposes
+ * `resetStore()` as a static method that no interface covers.
  */
 import {
     ConcreteProfile,
@@ -29,17 +34,20 @@ import {
     referenceBidi,
     skip,
     type Attribute,
-    type FDOGraph,
+    type LocalID,
     type PID,
     type Profile,
     type ProfileDefinition,
     type PublishedMappedFDORecord,
+    type ReadOnlyFDOGraph,
 } from "@fdo-sdk/primitives"
 import {
     ConcreteMappingContext,
     LocalTestingBackend,
     type MappingContext,
+    type MappingResult,
     type PublishAdapter,
+    type PublishResult,
     type ResolveAdapter,
 } from "@fdo-sdk/mapping"
 
@@ -102,7 +110,7 @@ type DatasetAttributes = {
 type AuthorAttributes = {
     name: string
     affiliation: string
-    /** Back-reference, filled in by `FDOGraph.build()` — see `skip()` below */
+    /** Back-reference, filled in by `MappingContext.build()` — see `skip()` below */
     authoredDatasets: string[]
 }
 
@@ -137,6 +145,45 @@ const DatasetProfile: Profile<DatasetAttributes> = new ConcreteProfile(
 const AuthorProfile: Profile<AuthorAttributes> = new ConcreteProfile(authorDef)
 
 // ---------------------------------------------------------------------------
+// The source data: the input of the mapping procedure. The mapping is a pure
+// function of this data, so running it again with changed data is what the
+// update cycle in section 6 does.
+// ---------------------------------------------------------------------------
+
+type Supplement = {
+    localID: LocalID
+    title: string
+    format: string
+}
+
+type SourceData = {
+    datasetName: string
+    supplements: Supplement[]
+}
+
+const initialSourceData: SourceData = {
+    datasetName: "Climate Index 2026",
+    supplements: [
+        {
+            localID: "LOCAL/supplement/code",
+            title: "Companion analysis code",
+            format: "text/x-python",
+        },
+    ],
+}
+
+const updatedSourceData: SourceData = {
+    datasetName: "Climate Index 2026 (final)",
+    supplements: [
+        {
+            localID: "LOCAL/supplement/notes",
+            title: "Analysis notes",
+            format: "text/markdown",
+        },
+    ],
+}
+
+// ---------------------------------------------------------------------------
 // Helpers that only depend on interfaces
 // ---------------------------------------------------------------------------
 
@@ -152,21 +199,81 @@ function show(label: string, value: unknown): void {
     console.log(`${label}: ${rendered}`)
 }
 
-async function publish(
+/**
+ * The mapping procedure: it maps the source data onto FDO records in the
+ * local graph of the given context. It does not depend on the state of the
+ * context, so it can be run as often as needed — every run fills a fresh
+ * local graph.
+ */
+function mapping(context: MappingContext, source: SourceData): void {
+    // Authors: the mandatory `authoredDatasets` back-reference is skipped here —
+    // it will be filled in by `context.build()` once the datasets declare their
+    // bidirectional references.
+    const ada = context.newRecord("LOCAL/author/ada")
+    ada.addProfile(AuthorProfile, {
+        name: "Ada Lovelace",
+        affiliation: "Analytical Engines Lab",
+        authoredDatasets: skip(),
+    })
+
+    const grace = context.newRecord("LOCAL/author/grace")
+    grace.addProfile(AuthorProfile, {
+        name: "Grace Hopper",
+        affiliation: "Naval Computing Lab",
+        authoredDatasets: skip(),
+    })
+
+    // Supplements do not conform to any profile — plain attributes are fine too.
+    for (const supplement of source.supplements) {
+        const record = context.newRecord(supplement.localID)
+        record.set(titleAttr, supplement.title)
+        record.set(formatAttr, supplement.format)
+    }
+
+    // The dataset profile is filled from "source data": the description is set
+    // first and then declared as `keep()`, the authors are declared as
+    // bidirectional references and the supplements as unidirectional ones.
+    const dataset = context.newRecord("LOCAL/dataset/climate-index")
+    dataset.set(
+        descriptionAttr,
+        "A curated collection of yearly climate index measurements.",
+    )
+    dataset.addProfile(DatasetProfile, {
+        name: source.datasetName,
+        description: keep(), // already present on the record, see above
+        keyword: ["climate", "index"],
+        license: "CC-BY-4.0",
+        hasAuthor: [
+            referenceBidi(authoredDatasetsAttr, "LOCAL/author/ada"),
+            referenceBidi(authoredDatasetsAttr, "LOCAL/author/grace"),
+        ],
+        hasPart: source.supplements.map((supplement) =>
+            reference(supplement.localID),
+        ),
+    })
+}
+
+/**
+ * Build the local graph of the context and publish the result. This is the
+ * regular workflow of a mapping: the graph is built first, so that all
+ * references are resolved, and only the built result is published.
+ */
+async function publishMapping(
     publisher: PublishAdapter,
-    graph: FDOGraph,
-): Promise<void> {
-    await publisher.publishGraph(graph)
+    context: MappingContext,
+): Promise<PublishResult> {
+    const result = context.build()
+    return await publisher.publishContinuous(result)
 }
 
 async function resolveMapping(
     resolver: ResolveAdapter,
     mappingPID: PID,
-): Promise<FDOGraph<PublishedMappedFDORecord>> {
+): Promise<ReadOnlyFDOGraph<PublishedMappedFDORecord>> {
     return await resolver.resolveMappingRecords(mappingPID)
 }
 
-function summarize(graph: FDOGraph<PublishedMappedFDORecord>): unknown {
+function summarize(graph: ReadOnlyFDOGraph<PublishedMappedFDORecord>): unknown {
     return graph
         .getRecords()
         .map((record) => ({ localID: record.localID, PID: record.PID }))
@@ -178,13 +285,14 @@ function summarize(graph: FDOGraph<PublishedMappedFDORecord>): unknown {
 
 section("1. Setup")
 
-const context: MappingContext = new ConcreteMappingContext()
+const context: MappingContext = new ConcreteMappingContext(mappingPID)
 
 // LocalTestingBackend is the concrete class under test, but everything below
 // only ever talks to it through the PublishAdapter / ResolveAdapter interfaces.
-const backend: PublishAdapter & ResolveAdapter = new LocalTestingBackend(
-    mappingPID,
-)
+// The backend is not bound to a single mapping: the mapping is determined by
+// the mapping result that is published, so one backend can serve any number
+// of mappings (see section 8).
+const backend: PublishAdapter & ResolveAdapter = new LocalTestingBackend()
 const publisher: PublishAdapter = backend
 const resolver: ResolveAdapter = backend
 
@@ -197,47 +305,7 @@ show("Fresh local graph records", context.localGraph.getRecords())
 
 section("2. Build the local graph")
 
-// Authors: the mandatory `authoredDatasets` back-reference is skipped here —
-// it will be filled in by `localGraph.build()` once the datasets declare their
-// bidirectional references.
-const ada = context.newRecord("LOCAL/author/ada")
-ada.addProfile(AuthorProfile, {
-    name: "Ada Lovelace",
-    affiliation: "Analytical Engines Lab",
-    authoredDatasets: skip(),
-})
-
-const grace = context.newRecord("LOCAL/author/grace")
-grace.addProfile(AuthorProfile, {
-    name: "Grace Hopper",
-    affiliation: "Naval Computing Lab",
-    authoredDatasets: skip(),
-})
-
-// Supplements do not conform to any profile — plain attributes are fine too.
-const code = context.newRecord("LOCAL/supplement/code")
-code.set(titleAttr, "Companion analysis code")
-code.set(formatAttr, "text/x-python")
-
-// The dataset profile is filled from "source data": the description is set
-// first and then declared as `keep()`, the authors are declared as
-// bidirectional references and the supplement as a unidirectional one.
-const dataset = context.newRecord("LOCAL/dataset/climate-index")
-dataset.set(
-    descriptionAttr,
-    "A curated collection of yearly climate index measurements.",
-)
-dataset.addProfile(DatasetProfile, {
-    name: "Climate Index 2026",
-    description: keep(), // already present on the record, see above
-    keyword: ["climate", "index"],
-    license: "CC-BY-4.0",
-    hasAuthor: [
-        referenceBidi(authoredDatasetsAttr, "LOCAL/author/ada"),
-        referenceBidi(authoredDatasetsAttr, "LOCAL/author/grace"),
-    ],
-    hasPart: [reference("LOCAL/supplement/code")],
-})
+mapping(context, initialSourceData)
 
 show("Local graph (records with attributes)", context.localGraph.toJSON())
 
@@ -245,27 +313,60 @@ show("Local graph (records with attributes)", context.localGraph.toJSON())
 // 3. Realize bidirectional references
 // ---------------------------------------------------------------------------
 
-section("3. localGraph.build() realizes the back-references")
+section("3. context.build() realizes the back-references")
 
 // `build()` must run before the first publish: back-references are written as
 // `record.PID ?? record.localID`, and at this point no record has a PID yet,
 // so both directions consistently reference local IDs.
-context.localGraph.build()
+//
+// The result of the build is the mapping result: the graph that is to be
+// published, plus the PIDs of the records that are not part of the mapping
+// anymore. Nothing was published before, so the latter list is empty.
+const result: MappingResult = context.build()
 
-show("ada.get(authoredDatasetsAttr)", ada.get(authoredDatasetsAttr))
-show("grace.get(authoredDatasetsAttr)", grace.get(authoredDatasetsAttr))
-show("dataset.get(hasAuthorAttr)", dataset.get(hasAuthorAttr))
+show("Local graph (built)", context.localGraph.toJSON())
+show("Deleted records", result.delete)
+show(
+    "ada.get(authoredDatasetsAttr)",
+    context.localGraph.getRecord("LOCAL/author/ada")?.get(authoredDatasetsAttr),
+)
+show(
+    "grace.get(authoredDatasetsAttr)",
+    context.localGraph
+        .getRecord("LOCAL/author/grace")
+        ?.get(authoredDatasetsAttr),
+)
+show(
+    "dataset.get(hasAuthorAttr)",
+    context.localGraph
+        .getRecord("LOCAL/dataset/climate-index")
+        ?.get(hasAuthorAttr),
+)
 
 // ---------------------------------------------------------------------------
-// 4. Publish through the PublishAdapter
+// 4. Publish the mapping result through the PublishAdapter
 // ---------------------------------------------------------------------------
 
-section("4. Publish the local graph")
+section("4. Publish the mapping result")
+
+const dataset = context.localGraph.getRecord("LOCAL/dataset/climate-index")!
 
 show("dataset.PID before publish", dataset.PID)
-await publish(publisher, context.localGraph)
+
+// `publishContinuous` publishes the result of a continuous mapping: the
+// records of the mapping are published, the records that are not part of the
+// mapping anymore are deleted, and the high level FDO record of the mapping
+// is created or updated.
+const publishResult: PublishResult = await publisher.publishContinuous(result)
+
 show("dataset.PID after publish", dataset.PID)
-show("ada.PID after publish", ada.PID)
+show(
+    "ada.PID after publish",
+    context.localGraph.getRecord("LOCAL/author/ada")?.PID,
+)
+show("PID of the mapping", publishResult.mappingPID)
+show("Published records of the mapping", summarize(publishResult.graph))
+show("Deleted records", publishResult.deleted)
 
 // ---------------------------------------------------------------------------
 // 5. Resolve through the ResolveAdapter
@@ -275,6 +376,42 @@ section("5. Resolve the mapping records")
 
 const published = await resolveMapping(resolver, mappingPID)
 show("Resolved records", summarize(published))
+
+// The mapping itself is a high level FDO record with the PID of the mapping.
+// It references all the records that are part of the mapping, and every one
+// of them points back to it.
+const mappingRecord = await resolver.resolveRecord(mappingPID)
+show("Mapping record (high level FDO record)", mappingRecord?.toJSON())
+show(
+    "Records point back to the mapping record",
+    published.getRecords().map((record) => ({
+        localID: record.localID,
+        partOfMapping: record.get("attr/partOfMapping"),
+    })),
+)
+
+// The published records contain no local IDs: the backend assigned a PID to
+// every record and fixed up the references, so the references of the published
+// records point to PIDs. The only local ID a published record holds is its own
+// — in `attr/localId`, where it identifies the record for the mapping that
+// published it.
+show(
+    "Local IDs left in the published records",
+    published.getRecords().flatMap((record) =>
+        Object.entries(record.toJSON()).flatMap(([attribute, value]) =>
+            (Array.isArray(value) ? value : [value])
+                .filter(
+                    (entry) =>
+                        typeof entry === "string" && entry.startsWith("LOCAL/"),
+                )
+                .map((entry) => ({
+                    attribute,
+                    localID: entry,
+                    ownLocalID: record.localID,
+                })),
+        ),
+    ),
+)
 
 // Resolved records are addressable by local ID...
 const resolvedDataset = published.getRecord("LOCAL/dataset/climate-index")
@@ -308,31 +445,45 @@ const stale = await resolver.resolveRecord(dataset.PID!)
 show("resolved record without republishing (unchanged)", stale?.get(nameAttr))
 
 // ---------------------------------------------------------------------------
-// 7. Update cycle: modify, add, republish — PIDs stay stable
+// 7. Update cycle: the same mapping procedure runs a second time
 // ---------------------------------------------------------------------------
 
 section("7. Update cycle")
 
-const previousDatasetPID = dataset.PID!
+// The update cycle is a second run of the very same mapping procedure: the
+// published records are resolved again and become the remote graph of a new
+// context. The mapping is run again on changed source data, the new context
+// is built and the new mapping result is published.
+//
+// The backend keeps the PID of a record stable as long as it is published
+// under the same local ID, so the dataset keeps its PID even though it is
+// mapped from scratch.
+const publishedRecords = await resolveMapping(resolver, mappingPID)
+const updateContext: MappingContext = new ConcreteMappingContext(
+    mappingPID,
+    publishedRecords,
+)
 
-// Changes to an existing record...
-dataset.set(nameAttr, "Climate Index 2026 (final)")
+mapping(updateContext, updatedSourceData)
 
-// ...and a brand-new record. Only unidirectional references are added here,
-// because `build()` is one-shot and has already run.
-const notes = context.newRecord("LOCAL/supplement/notes")
-notes.set(titleAttr, "Analysis notes")
-notes.set(formatAttr, "text/markdown")
-dataset.addReference(hasPartAttr, "LOCAL/supplement/notes")
+const updateResult = updateContext.build()
 
-await publish(publisher, context.localGraph)
+// The supplement of the first run is not part of the mapping anymore, so the
+// context reports its PID as deleted.
+show("Deleted records", updateResult.delete)
+
+await publisher.publishContinuous(updateResult)
+
+show(
+    "Mapping record after update",
+    (await resolver.resolveRecord(mappingPID))?.toJSON(),
+)
 
 const updated = await resolveMapping(resolver, mappingPID)
 show("Resolved records after update", summarize(updated))
 show(
     "PID of the dataset is stable",
-    updated.getRecord("LOCAL/dataset/climate-index")?.PID ===
-        previousDatasetPID,
+    updated.getRecord("LOCAL/dataset/climate-index")?.PID === dataset.PID,
 )
 show(
     "Updated attribute value",
@@ -343,7 +494,11 @@ show(
     updated.getRecord("LOCAL/supplement/notes")?.toJSON(),
 )
 show(
-    "hasPart now references both supplements",
+    "Supplement that is not part of the mapping anymore",
+    updated.getRecord("LOCAL/supplement/code"),
+)
+show(
+    "hasPart now references the new supplement",
     updated.getRecord("LOCAL/dataset/climate-index")?.get(hasPartAttr),
 )
 
@@ -353,20 +508,22 @@ show(
 
 section("8. Mapping isolation")
 
-// A second, independent mapping. All LocalTestingBackend instances share one
-// store, so its records are visible to the first mapping's backend as well.
-const otherContext: MappingContext = new ConcreteMappingContext()
-const otherBackend: PublishAdapter & ResolveAdapter = new LocalTestingBackend(
-    otherMappingPID,
-)
-const otherResolver: ResolveAdapter = otherBackend
+// A second, independent mapping, published through the very same backend: the
+// backend is not bound to a single mapping. All backend instances share one
+// store, so the records of the other mapping are visible to the first mapping
+// as well.
+const otherContext: MappingContext = new ConcreteMappingContext(otherMappingPID)
 
 const release = otherContext.newRecord("LOCAL/release/v1")
 release.set(titleAttr, "Climate Index 2026 release announcement")
-await publish(otherBackend, otherContext.localGraph)
+await publishMapping(publisher, otherContext)
 
-const otherPublished = await resolveMapping(otherResolver, otherMappingPID)
+const otherPublished = await resolveMapping(resolver, otherMappingPID)
 show("Records of the other mapping", summarize(otherPublished))
+show(
+    "Mapping record of the other mapping",
+    (await resolver.resolveRecord(otherMappingPID))?.toJSON(),
+)
 show(
     "The other mapping does not see this mapping's records",
     otherPublished.getRecord("LOCAL/dataset/climate-index") === undefined,
@@ -377,14 +534,77 @@ show(
 )
 show(
     "resolveRecord is not mapping-scoped (shared store)",
-    (await otherResolver.resolveRecord(previousDatasetPID))?.PID,
+    (await resolver.resolveRecord(dataset.PID!))?.PID,
 )
 
 // ---------------------------------------------------------------------------
-// 9. Reset the store between test runs
+// 9. Publishing without a mapping
 // ---------------------------------------------------------------------------
 
-section("9. Reset the store")
+section("9. Publishing without a mapping")
+
+// Not every published record belongs to a mapping: a single record or a whole
+// graph can be published on its own. `publishRecord` and `publishGraph` do not
+// create a high level FDO record of a mapping, and the published records do
+// not point back to one. They are published all the same: they get a PID, they
+// are stored and they can be resolved.
+
+const noticeContext: MappingContext = new ConcreteMappingContext("TEST/notice")
+const notice = noticeContext.newRecord("LOCAL/notice")
+notice.set(titleAttr, "Climate Index 2026 release announcement")
+
+const publishedNotice = await publisher.publishRecord(notice)
+
+show("Published record", publishedNotice.toJSON())
+show("PID of the published record", publishedNotice.PID)
+show("The record keeps its own local ID", publishedNotice.get("attr/localId"))
+show(
+    "The record does not point back to a mapping",
+    publishedNotice.get("attr/partOfMapping"),
+)
+
+// A whole graph, published on its own. The dataset references the part, and
+// the reference is fixed up to the PID the part was published with.
+const graphContext: MappingContext = new ConcreteMappingContext("TEST/graph")
+const graphDataset = graphContext.newRecord("LOCAL/graph/dataset")
+graphDataset.addReference(hasPartAttr, "LOCAL/graph/part")
+
+const publishedGraph = await publisher.publishGraph(graphContext.localGraph)
+
+show(
+    "Published graph",
+    publishedGraph.getRecords().map((record) => ({
+        PID: record.PID,
+        attributes: record.toJSON(),
+    })),
+)
+show(
+    "The reference of the graph is fixed up to a PID",
+    publishedGraph.getRecord(graphDataset.PID!)?.get(hasPartAttr),
+)
+
+// The published records are not part of any mapping: the mapping of the
+// example does not contain them, and there is no high level FDO record for
+// them.
+show(
+    "The published records are not part of the mapping",
+    (await resolveMapping(resolver, mappingPID)).getRecord("LOCAL/notice") ===
+        undefined,
+)
+show(
+    "There is no high level FDO record for them",
+    await resolver.resolveRecord("TEST/notice"),
+)
+show(
+    "The published record is resolvable all the same",
+    (await resolver.resolveRecord(publishedNotice.PID))?.get(titleAttr),
+)
+
+// ---------------------------------------------------------------------------
+// 10. Reset the store between test runs
+// ---------------------------------------------------------------------------
+
+section("10. Reset the store")
 
 // `resetStore` is a static method on the class — the one piece of the API not
 // covered by the PublishAdapter / ResolveAdapter interfaces.
@@ -398,9 +618,6 @@ try {
         error instanceof Error ? error.message : String(error),
     )
 }
-show(
-    "resolveRecord after reset",
-    await resolver.resolveRecord(previousDatasetPID),
-)
+show("resolveRecord after reset", await resolver.resolveRecord(dataset.PID!))
 
 console.log("\nDone.")

@@ -1,13 +1,13 @@
 import type {
-    FDOGraph,
     PID,
     PublishedFDORecord,
     PublishedMappedFDORecord,
 } from "@fdo-sdk/primitives"
+import type { ReadOnlyFDOGraph } from "@fdo-sdk/primitives"
 
 export interface ResolveAdapter {
     resolveMappingRecords(
         mappingPID: PID,
-    ): Promise<FDOGraph<PublishedMappedFDORecord>>
+    ): Promise<ReadOnlyFDOGraph<PublishedMappedFDORecord>>
     resolveRecord(recordPID: PID): Promise<PublishedFDORecord | undefined>
 }

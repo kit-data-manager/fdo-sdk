@@ -11,7 +11,8 @@ import * as fs from "node:fs"
 type Experiment = (typeof experimentsData)["creepExperiments"][number]
 type DataFile = Experiment["dataResources"][number]
 
-const context: MappingContext = new ConcreteMappingContext()
+const mappingPID = "TEST/creep-experiments"
+const context: MappingContext = new ConcreteMappingContext(mappingPID)
 
 function addDataResource(record: FDORecord, file: DataFile) {
     record.addProfile(DataResourceProfile, {
@@ -61,9 +62,9 @@ for (const experiment of experimentsData.creepExperiments) {
     addCreepExperiment(context.newRecord(`LOCAL/${experiment.id}`), experiment)
 }
 
-fs.writeFile(
-    "./result.json",
-    JSON.stringify(context.localGraph, null, 2),
-    () => {},
-)
+// The graph is built before it is published: building realizes the
+// bidirectional references, the result of the build is the mapping result.
+const result = context.build()
+
+fs.writeFile("./result.json", JSON.stringify(result.graph, null, 2), () => {})
 console.log("Resulting graph was written to result.json")
