@@ -1,21 +1,21 @@
-import type { ResolveAdapter } from "../../interfaces/index.js"
 import {
+    ConcreteFDORecord,
+    PublishedFDOGraph,
     type PID,
-    type FDOGraph,
     type PublishedFDORecord,
-    type PublishedMappedFDORecord,
+    type PublishedLocalFDORecord,
+    type ReadOnlyFDOGraph,
+    type ResolveAdapter,
 } from "@fdo-sdk/primitives"
 import { TypidClient, type TypidRecord } from "../clients/typid/TypidClient.js"
-import { ConcreteFDORecord } from "@fdo-sdk/primitives"
-import { MappedGraph } from "@fdo-sdk/primitives"
 
 const typidClient = new TypidClient()
 
 export class TypidResolver implements ResolveAdapter {
     async resolveMappingRecords(
         mappingPID: PID,
-    ): Promise<FDOGraph<PublishedMappedFDORecord>> {
-        const graph = new MappedGraph<PublishedMappedFDORecord>()
+    ): Promise<ReadOnlyFDOGraph<PublishedLocalFDORecord>> {
+        const graph = new PublishedFDOGraph<PublishedLocalFDORecord>()
 
         const rootRecord = await this.resolveRecord(mappingPID)
         if (!rootRecord) {

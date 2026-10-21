@@ -1,8 +1,8 @@
 import type {
     FDORecord,
-    MappedFDORecord,
+    LocalFDORecord,
     PublishedFDORecord,
-    PublishedMappedFDORecord,
+    PublishedLocalFDORecord,
 } from "./interfaces/index.js"
 
 export function toArray<T>(val: T | T[]): T[] {
@@ -13,7 +13,7 @@ export function toArray<T>(val: T | T[]): T[] {
     }
 }
 
-export function isMapped(record: FDORecord): record is MappedFDORecord {
+export function isMapped(record: FDORecord): record is LocalFDORecord {
     return "localID" in record
 }
 
@@ -23,6 +23,6 @@ export function isPublished(record: FDORecord): record is PublishedFDORecord {
 
 export function isPublishedMapped(
     record: FDORecord,
-): record is PublishedMappedFDORecord {
+): record is PublishedLocalFDORecord {
     return isMapped(record) && isPublished(record)
 }

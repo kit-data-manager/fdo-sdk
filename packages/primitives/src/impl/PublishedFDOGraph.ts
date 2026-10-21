@@ -4,11 +4,11 @@ import type { LocalID, PID, RecordValue } from "../types.js"
 
 /**
  * A graph of published FDO records. The records are identified by their
- * {@link PID}. In contrast to the {@link MappedGraph}, the records of a
+ * {@link PID}. In contrast to the {@link LocalFDOGraph}, the records of a
  * published graph do not need a local ID: a published record is globally
  * identified by its PID.
  */
-export class PublishedGraph<
+export class PublishedFDOGraph<
     RecordType extends PublishedFDORecord = PublishedFDORecord,
 > implements ReadOnlyFDOGraph<RecordType> {
     private readonly records = new Map<PID, RecordType>()

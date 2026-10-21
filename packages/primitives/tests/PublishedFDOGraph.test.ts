@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest"
 import type { LocalID, PublishedFDORecord } from "../src/index.js"
 import {
     ConcreteFDORecord,
-    ConcreteMappedFDORecord,
-    PublishedGraph,
+    ConcreteLocalFDORecord,
+    PublishedFDOGraph,
 } from "../src/index.js"
 
 function publishedRecord(pid: string): PublishedFDORecord {
@@ -15,21 +15,21 @@ function publishedMappedRecord(
     localID: LocalID,
     pid: string,
 ): PublishedFDORecord {
-    const record = new ConcreteMappedFDORecord(localID, pid)
+    const record = new ConcreteLocalFDORecord(localID, pid)
     return record as PublishedFDORecord
 }
 
-describe("PublishedGraph", () => {
+describe("PublishedFDOGraph", () => {
     describe("construction", () => {
         it("starts with no records", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             expect(graph.getRecords()).toEqual([])
         })
     })
 
     describe("addRecord / getRecords", () => {
         it("returns all added records", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             const a = publishedRecord("rec/a")
             const b = publishedRecord("rec/b")
             graph.addRecord(a)
@@ -38,7 +38,7 @@ describe("PublishedGraph", () => {
         })
 
         it("returns a new array each time (mutating it does not affect the graph)", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             graph.addRecord(publishedRecord("rec/a"))
             const records = graph.getRecords()
             records.pop()
@@ -46,14 +46,14 @@ describe("PublishedGraph", () => {
         })
 
         it("keeps records without a local ID", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             graph.addRecord(publishedRecord("rec/a"))
             graph.addRecord(publishedRecord("rec/b"))
             expect(graph.getRecords()).toHaveLength(2)
         })
 
         it("replaces an existing record with the same PID", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             const replacement = publishedRecord("rec/a")
             graph.addRecord(publishedRecord("rec/a"))
             graph.addRecord(replacement)
@@ -64,21 +64,21 @@ describe("PublishedGraph", () => {
 
     describe("getRecord", () => {
         it("finds a record by PID", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             const record = publishedRecord("rec/a")
             graph.addRecord(record)
             expect(graph.getRecord("rec/a")).toBe(record)
         })
 
         it("finds a record by local ID", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             const record = publishedMappedRecord("LOCAL/1", "rec/a")
             graph.addRecord(record)
             expect(graph.getRecord("LOCAL/1")).toBe(record)
         })
 
         it("returns undefined for an unknown id", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             graph.addRecord(publishedRecord("rec/a"))
             expect(graph.getRecord("rec/missing")).toBeUndefined()
             expect(graph.getRecord("LOCAL/missing")).toBeUndefined()
@@ -87,7 +87,7 @@ describe("PublishedGraph", () => {
 
     describe("findRecord", () => {
         it("returns the first record matching the predicate", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             const a = publishedRecord("rec/a")
             const b = publishedRecord("rec/b")
             graph.addRecord(a)
@@ -96,7 +96,7 @@ describe("PublishedGraph", () => {
         })
 
         it("returns undefined when no record matches", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             graph.addRecord(publishedRecord("rec/a"))
             expect(graph.findRecord(() => false)).toBeUndefined()
         })
@@ -104,7 +104,7 @@ describe("PublishedGraph", () => {
 
     describe("toString", () => {
         it("prints all record toStrings separated by newlines", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             const a = publishedRecord("rec/a")
             const b = publishedRecord("rec/b")
             graph.addRecord(a)
@@ -113,14 +113,14 @@ describe("PublishedGraph", () => {
         })
 
         it("is empty for an empty graph", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             expect(graph.toString()).toBe("")
         })
     })
 
     describe("toJSON", () => {
         it("returns the record JSON objects, keyed by PID", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             const a = publishedRecord("rec/a")
             const b = publishedRecord("rec/b")
             a.set("a/pid", "value-a")
@@ -134,7 +134,7 @@ describe("PublishedGraph", () => {
         })
 
         it("uses the local ID in the key when the record has one", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             const record = publishedMappedRecord("LOCAL/1", "rec/a")
             graph.addRecord(record)
             expect(graph.toJSON()).toEqual({
@@ -143,7 +143,7 @@ describe("PublishedGraph", () => {
         })
 
         it("returns an empty record for an empty graph", () => {
-            const graph = new PublishedGraph()
+            const graph = new PublishedFDOGraph()
             expect(graph.toJSON()).toEqual({})
         })
     })

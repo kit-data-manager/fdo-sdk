@@ -19,7 +19,7 @@
  *   10. Resetting the store between test runs
  *
  * Everything is typed against the interfaces (`MappingContext`,
- * `MappingResult`, `PublishAdapter`, `ResolveAdapter`, `FDOGraph`,
+ * `MappingResult`, `ContinuousPublishAdapter`, `ResolveAdapter`, `FDOGraph`,
  * `FDORecord`, `Profile`, ...) so the example would work unchanged with a
  * different context or backend implementation. The only concrete classes used
  * are `ConcreteMappingContext` (constructed, then consumed as
@@ -38,17 +38,17 @@ import {
     type PID,
     type Profile,
     type ProfileDefinition,
-    type PublishedMappedFDORecord,
+    type PublishedLocalFDORecord,
     type ReadOnlyFDOGraph,
+    type ResolveAdapter,
 } from "@fdo-sdk/primitives"
 import {
     ConcreteMappingContext,
     LocalTestingBackend,
+    type ContinuousPublishAdapter,
+    type ContinuousPublishResult,
     type MappingContext,
     type MappingResult,
-    type PublishAdapter,
-    type PublishResult,
-    type ResolveAdapter,
 } from "@fdo-sdk/mapping"
 
 // ---------------------------------------------------------------------------
@@ -259,9 +259,9 @@ function mapping(context: MappingContext, source: SourceData): void {
  * references are resolved, and only the built result is published.
  */
 async function publishMapping(
-    publisher: PublishAdapter,
+    publisher: ContinuousPublishAdapter,
     context: MappingContext,
-): Promise<PublishResult> {
+): Promise<ContinuousPublishResult> {
     const result = context.build()
     return await publisher.publishContinuous(result)
 }
@@ -269,11 +269,11 @@ async function publishMapping(
 async function resolveMapping(
     resolver: ResolveAdapter,
     mappingPID: PID,
-): Promise<ReadOnlyFDOGraph<PublishedMappedFDORecord>> {
+): Promise<ReadOnlyFDOGraph<PublishedLocalFDORecord>> {
     return await resolver.resolveMappingRecords(mappingPID)
 }
 
-function summarize(graph: ReadOnlyFDOGraph<PublishedMappedFDORecord>): unknown {
+function summarize(graph: ReadOnlyFDOGraph<PublishedLocalFDORecord>): unknown {
     return graph
         .getRecords()
         .map((record) => ({ localID: record.localID, PID: record.PID }))
@@ -288,12 +288,14 @@ section("1. Setup")
 const context: MappingContext = new ConcreteMappingContext(mappingPID)
 
 // LocalTestingBackend is the concrete class under test, but everything below
-// only ever talks to it through the PublishAdapter / ResolveAdapter interfaces.
+// only ever talks to it through the ContinuousPublishAdapter / ResolveAdapter
+// interfaces.
 // The backend is not bound to a single mapping: the mapping is determined by
 // the mapping result that is published, so one backend can serve any number
 // of mappings (see section 8).
-const backend: PublishAdapter & ResolveAdapter = new LocalTestingBackend()
-const publisher: PublishAdapter = backend
+const backend: ContinuousPublishAdapter & ResolveAdapter =
+    new LocalTestingBackend()
+const publisher: ContinuousPublishAdapter = backend
 const resolver: ResolveAdapter = backend
 
 show("Mapping PID", mappingPID)
@@ -357,7 +359,8 @@ show("dataset.PID before publish", dataset.PID)
 // records of the mapping are published, the records that are not part of the
 // mapping anymore are deleted, and the high level FDO record of the mapping
 // is created or updated.
-const publishResult: PublishResult = await publisher.publishContinuous(result)
+const publishResult: ContinuousPublishResult =
+    await publisher.publishContinuous(result)
 
 show("dataset.PID after publish", dataset.PID)
 show(
@@ -565,6 +568,11 @@ show(
 
 // A whole graph, published on its own. The dataset references the part, and
 // the reference is fixed up to the PID the part was published with.
+//
+// TODO: this is not what happens yet: the example never creates a record for
+// "LOCAL/graph/part", so there is no published target to fix the reference up
+// to, and the published record keeps the local ID of the reference. Either add
+// a part record to the graph, or reword this comment and the labels below.
 const graphContext: MappingContext = new ConcreteMappingContext("TEST/graph")
 const graphDataset = graphContext.newRecord("LOCAL/graph/dataset")
 graphDataset.addReference(hasPartAttr, "LOCAL/graph/part")

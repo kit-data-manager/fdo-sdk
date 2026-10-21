@@ -9,7 +9,7 @@ pnpm monorepo (`packages/*`) orchestrated by Lerna 10 (Nx task runner). Four pac
 | `packages/primitives`       | `@fdo-sdk/primitives` | —                        |
 | `packages/mapping`          | `@fdo-sdk/mapping`    | `primitives`             |
 | `packages/examples`         | `@fdo-sdk/examples`   | `primitives`, `mapping`  |
-| `packages/docs`             | `@fdo-sdk/docs`       | `primitives`             |
+| `packages/docs`             | `@fdo-sdk/docs`       | `primitives`, `mapping`  |
 
 Run workspace commands from the repo root:
 
@@ -26,8 +26,18 @@ Inside a package, `pnpm build` is `tsc --noEmit` then `tsdown`, emitting a singl
 
 - TS is strict with `verbatimModuleSyntax`/`isolatedModules`: type-only imports MUST use `import type`.
 - Relative imports must end in `.js` even though files are `.ts` (node16/nodenext resolution), e.g. `../types.js`.
-- Public surface is `src/index.ts`. Interfaces have no prefix (`FDORecord`, `FDOGraph`, `Profile`, `ProfileDefinition`); implementations are `Concrete`-prefixed classes in `src/impl/` (`ConcreteMappedFDORecord`, `ConcreteProfile`), except the graph implementation, which is named after its strategy (`MappedGraph`).
+- Public surface is `src/index.ts`. Interfaces have no prefix (`FDORecord`, `FDOGraph`, `Profile`, `ProfileDefinition`); implementations are `Concrete`-prefixed classes in `src/impl/` (`ConcreteLocalFDORecord`, `ConcreteProfile`), except the graph implementation, which is named after its strategy (`LocalFDOGraph`).
 - Core types (`PID`, `LocalID`, `RecordValue`, ...) live in `src/types.ts`.
+
+## Documentation
+
+`packages/docs` builds a single TypeDoc site (output in `packages/docs/generated`, gitignored) covering several packages. It runs as one TypeDoc project with several entry points, so cross-package type references are rendered as links:
+
+- `packages/docs/src/<package>.ts` — one thin entry point per documented package; it re-exports the package's public API (`export * from "@fdo-sdk/<package>"`) and determines the module name in the generated site.
+- `packages/docs/typedoc.json` — lists those entry points.
+- `packages/docs/tsconfig.json` — extends the primitives tsconfig and maps `@fdo-sdk/*` to the package *sources* via `paths`, so referenced types are documented (and linkable) instead of being treated as external.
+
+To document another package: add `src/<package>.ts`, add it to `entryPoints`, add a `paths` entry for it, and add it to the docs package's `devDependencies`.
 
 ## Testing
 

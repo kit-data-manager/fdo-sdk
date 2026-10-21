@@ -219,6 +219,9 @@ importers:
 
   packages/docs:
     devDependencies:
+      '@fdo-sdk/mapping':
+        specifier: workspace:*
+        version: link:../mapping
       '@fdo-sdk/primitives':
         specifier: workspace:*
         version: link:../primitives

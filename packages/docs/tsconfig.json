@@ -1,0 +1,14 @@
+{
+    "extends": "../primitives/tsconfig.json",
+    "compilerOptions": {
+        "paths": {
+            "@fdo-sdk/primitives": ["../primitives/src/index.ts"],
+            "@fdo-sdk/mapping": ["../mapping/src/index.ts"]
+        }
+    },
+    "include": [
+        "../primitives/src/**/*.ts",
+        "../mapping/src/**/*.ts",
+        "src/**/*.ts"
+    ]
+}

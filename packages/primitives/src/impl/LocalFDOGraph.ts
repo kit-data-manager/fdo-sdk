@@ -1,8 +1,11 @@
-import type { FDOGraph, MappedFDORecord } from "../interfaces/index.js"
+import type { FDOGraph, LocalFDORecord } from "../interfaces/index.js"
 import type { LocalID, PID, RecordValue } from "../types.js"
 
-export class MappedGraph<
-    RecordType extends MappedFDORecord = MappedFDORecord,
+/**
+ * A graph of locally created FDO records than can be used without PIDs
+ */
+export class LocalFDOGraph<
+    RecordType extends LocalFDORecord = LocalFDORecord,
 > implements FDOGraph<RecordType> {
     private recordsByLocalID = new Map<LocalID, RecordType>()
     private pids = new Map<PID, LocalID>()

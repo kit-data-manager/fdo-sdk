@@ -1,16 +1,19 @@
-import type { PublishAdapter, ResolveAdapter } from "../../interfaces/index.js"
-import type { MappingResult, PublishResult } from "../../types.js"
+import type { ContinuousPublishAdapter } from "../../interfaces/index.js"
+import type { MappingResult, ContinuousPublishResult } from "../../types.js"
 import {
     ConcreteFDORecord,
-    PublishedGraph,
     type FDORecord,
     type LocalID,
     type PID,
     type PublishedFDORecord,
-    type PublishedMappedFDORecord,
     type ReadOnlyFDOGraph,
     type RecordValue,
     type ReferenceDeclaration,
+} from "@fdo-sdk/primitives"
+import type { ResolveAdapter } from "@fdo-sdk/primitives"
+import {
+    PublishedFDOGraph,
+    type PublishedLocalFDORecord,
 } from "@fdo-sdk/primitives"
 
 type StoredRecord = {
@@ -69,7 +72,7 @@ class RestoredFDORecord extends ConcreteFDORecord {
 /**
  * An in-memory backend for local testing, acting as a stand-in for a PID
  * service and as the FDO flavor of the local testing setup. Implements both
- * {@link PublishAdapter} and {@link ResolveAdapter}.
+ * {@link ContinuousPublishAdapter} and {@link ResolveAdapter}.
  *
  * The backend is not bound to a single mapping: the mapping is determined by
  * the mapping result that is published, so one backend instance can publish
@@ -116,7 +119,9 @@ class RestoredFDORecord extends ConcreteFDORecord {
  * are resolvable through the backend instance of another mapping. Use
  * {@link resetStore} to clear the store, e.g. between tests.
  */
-export class LocalTestingBackend implements PublishAdapter, ResolveAdapter {
+export class LocalTestingBackend
+    implements ContinuousPublishAdapter, ResolveAdapter
+{
     /**
      * Publishes the result of a continuous mapping.
      *
@@ -126,7 +131,7 @@ export class LocalTestingBackend implements PublishAdapter, ResolveAdapter {
      */
     async publishContinuous(
         mappingResult: MappingResult,
-    ): Promise<PublishResult> {
+    ): Promise<ContinuousPublishResult> {
         const mappingPID = mappingResult.mappingPID
         const mappingRecords = this.getOrCreateMappingRecords(mappingPID)
 
@@ -140,7 +145,10 @@ export class LocalTestingBackend implements PublishAdapter, ResolveAdapter {
 
         // The records of the mapping are published.
         this.publishRecords(
-            mappingResult.graph.getRecords(),
+            [
+                ...mappingResult.create.getRecords(),
+                ...mappingResult.update.getRecords(),
+            ],
             mappingRecords,
             mappingPID,
         )
@@ -167,7 +175,7 @@ export class LocalTestingBackend implements PublishAdapter, ResolveAdapter {
             undefined,
         )
 
-        const result = new PublishedGraph()
+        const result = new PublishedFDOGraph()
         for (const { pid } of published) {
             result.addRecord(this.restoredRecord(pid))
         }
@@ -188,7 +196,7 @@ export class LocalTestingBackend implements PublishAdapter, ResolveAdapter {
 
     async resolveMappingRecords(
         mappingPID: PID,
-    ): Promise<ReadOnlyFDOGraph<PublishedMappedFDORecord>> {
+    ): Promise<ReadOnlyFDOGraph<PublishedLocalFDORecord>> {
         const recordPIDs = store.mappings.get(mappingPID)
         if (!recordPIDs) {
             throw new Error(`Mapping record not found: ${mappingPID}`)
@@ -355,12 +363,12 @@ export class LocalTestingBackend implements PublishAdapter, ResolveAdapter {
      */
     private publishedGraph(
         scope: Set<PID>,
-    ): PublishedGraph<PublishedMappedFDORecord> {
-        const graph = new PublishedGraph<PublishedMappedFDORecord>()
+    ): PublishedFDOGraph<PublishedLocalFDORecord> {
+        const graph = new PublishedFDOGraph<PublishedLocalFDORecord>()
         for (const pid of scope) {
             const stored = store.records.get(pid)!
             graph.addRecord(
-                new RestoredFDORecord(stored) as PublishedMappedFDORecord,
+                new RestoredFDORecord(stored) as PublishedLocalFDORecord,
             )
         }
         return graph

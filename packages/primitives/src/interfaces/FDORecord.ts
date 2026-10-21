@@ -9,7 +9,7 @@ import type {
 import type { Profile } from "./Profile.js"
 import type { Attribute } from "./Attribute.js"
 
-export interface MappedFDORecord extends FDORecord {
+export interface LocalFDORecord extends FDORecord {
     /**
      * The locally unique identifier of this record
      */
@@ -23,8 +23,8 @@ export interface PublishedFDORecord extends FDORecord {
     readonly PID: PID
 }
 
-export interface PublishedMappedFDORecord
-    extends Omit<MappedFDORecord, "PID">, PublishedFDORecord {}
+export interface PublishedLocalFDORecord
+    extends Omit<LocalFDORecord, "PID">, PublishedFDORecord {}
 
 /**
  * Represents a single FDO record that is associated with a local identifier and

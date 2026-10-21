@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, it } from "vitest"
 import {
     ConcreteFDORecord,
-    ConcreteMappedFDORecord,
+    ConcreteLocalFDORecord,
     ConcreteProfile,
-    MappedGraph,
+    LocalFDOGraph,
     type Attribute,
+    type PID,
     type ProfileDefinition,
 } from "@fdo-sdk/primitives"
-import { ConcreteMappingContext, LocalTestingBackend } from "../src/index.js"
+import {
+    ConcreteMappingContext,
+    LocalTestingBackend,
+    type MappingResult,
+} from "../src/index.js"
 
 type TestProfileAttributes = {
     datasetName: string
@@ -36,30 +41,43 @@ const toAttr: Attribute<string> = {
 const mappingPID = "TEST/mapping"
 
 function newGraphWithRecords(
-    ...records: ConcreteMappedFDORecord[]
-): MappedGraph {
-    const graph = new MappedGraph()
+    ...records: ConcreteLocalFDORecord[]
+): LocalFDOGraph {
+    const graph = new LocalFDOGraph()
     for (const record of records) graph.addRecord(record)
     return graph
 }
 
+/**
+ * A mapping result for the mapping with the given PID: the given records are
+ * created by the mapping, the given PIDs are deleted by the mapping.
+ */
+function newMappingResult(
+    records: ConcreteLocalFDORecord[] = [],
+    deleted: PID[] = [],
+    pid: PID = mappingPID,
+): MappingResult {
+    return {
+        mappingPID: pid,
+        create: newGraphWithRecords(...records),
+        update: new LocalFDOGraph(),
+        delete: deleted,
+    }
+}
+
 async function publishAll(
     backend: LocalTestingBackend,
-    ...records: ConcreteMappedFDORecord[]
+    ...records: ConcreteLocalFDORecord[]
 ): Promise<void> {
     await publishFor(backend, mappingPID, ...records)
 }
 
 async function publishFor(
     backend: LocalTestingBackend,
-    pid: string,
-    ...records: ConcreteMappedFDORecord[]
+    pid: PID,
+    ...records: ConcreteLocalFDORecord[]
 ): Promise<void> {
-    await backend.publishContinuous({
-        mappingPID: pid,
-        graph: newGraphWithRecords(...records),
-        delete: [],
-    })
+    await backend.publishContinuous(newMappingResult(records, [], pid))
 }
 
 describe("LocalTestingBackend", () => {
@@ -70,8 +88,8 @@ describe("LocalTestingBackend", () => {
     describe("publishContinuous", () => {
         it("assigns fresh unique PIDs to records without a PID", async () => {
             const backend = new LocalTestingBackend()
-            const recordA = new ConcreteMappedFDORecord("LOCAL/1")
-            const recordB = new ConcreteMappedFDORecord("LOCAL/2")
+            const recordA = new ConcreteLocalFDORecord("LOCAL/1")
+            const recordB = new ConcreteLocalFDORecord("LOCAL/2")
 
             await publishAll(backend, recordA, recordB)
 
@@ -82,10 +100,7 @@ describe("LocalTestingBackend", () => {
 
         it("keeps the PID of records that already have one", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord(
-                "LOCAL/1",
-                "existing/pid",
-            )
+            const record = new ConcreteLocalFDORecord("LOCAL/1", "existing/pid")
 
             await publishAll(backend, record)
 
@@ -97,10 +112,10 @@ describe("LocalTestingBackend", () => {
             const backend = new LocalTestingBackend()
             const record = new ConcreteFDORecord()
             record.set("attr/a", "value")
-            const graph = new MappedGraph()
-            graph.addRecord(record as unknown as ConcreteMappedFDORecord)
 
-            await backend.publishContinuous({ mappingPID, graph, delete: [] })
+            await backend.publishContinuous(
+                newMappingResult([record as unknown as ConcreteLocalFDORecord]),
+            )
 
             const resolved = await backend.resolveRecord(record.PID!)
             expect(resolved?.get("attr/a")).toBe("value")
@@ -109,7 +124,7 @@ describe("LocalTestingBackend", () => {
 
         it("updates the stored snapshot when a record is published again", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/1")
+            const record = new ConcreteLocalFDORecord("LOCAL/1")
             record.set("attr/a", "v1")
             await publishAll(backend, record)
             const firstPID = record.PID!
@@ -124,13 +139,13 @@ describe("LocalTestingBackend", () => {
 
         it("keeps the PID of a record that was published before under the same local ID", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/1")
+            const record = new ConcreteLocalFDORecord("LOCAL/1")
             await publishAll(backend, record)
             const firstPID = record.PID!
 
             // A second run of the same mapping creates a new record object for
             // the same local ID. It must not receive a new PID.
-            const secondRun = new ConcreteMappedFDORecord("LOCAL/1")
+            const secondRun = new ConcreteLocalFDORecord("LOCAL/1")
             await publishAll(backend, secondRun)
 
             expect(secondRun.PID).toBe(firstPID)
@@ -141,10 +156,10 @@ describe("LocalTestingBackend", () => {
 
         it("does not reuse the PID of a record of another mapping", async () => {
             const backend = new LocalTestingBackend()
-            const recordA = new ConcreteMappedFDORecord("LOCAL/1")
+            const recordA = new ConcreteLocalFDORecord("LOCAL/1")
             await publishAll(backend, recordA)
 
-            const recordB = new ConcreteMappedFDORecord("LOCAL/1")
+            const recordB = new ConcreteLocalFDORecord("LOCAL/1")
             await publishFor(backend, "TEST/other-mapping", recordB)
 
             expect(recordB.PID).not.toBe(recordA.PID)
@@ -152,15 +167,11 @@ describe("LocalTestingBackend", () => {
 
         it("deletes the records that are not part of the mapping result anymore", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/1")
+            const record = new ConcreteLocalFDORecord("LOCAL/1")
             await publishAll(backend, record)
             const pid = record.PID!
 
-            await backend.publishContinuous({
-                mappingPID,
-                graph: newGraphWithRecords(),
-                delete: [pid],
-            })
+            await backend.publishContinuous(newMappingResult([], [pid]))
 
             expect(await backend.resolveRecord(pid)).toBeUndefined()
             expect(
@@ -171,26 +182,20 @@ describe("LocalTestingBackend", () => {
         it("returns the PID of the mapping", async () => {
             const backend = new LocalTestingBackend()
 
-            const result = await backend.publishContinuous({
-                mappingPID,
-                graph: newGraphWithRecords(),
-                delete: [],
-            })
+            const result = await backend.publishContinuous(newMappingResult())
 
             expect(result.mappingPID).toBe(mappingPID)
         })
 
         it("returns the published records of the mapping", async () => {
             const backend = new LocalTestingBackend()
-            const recordA = new ConcreteMappedFDORecord("LOCAL/1")
-            const recordB = new ConcreteMappedFDORecord("LOCAL/2")
+            const recordA = new ConcreteLocalFDORecord("LOCAL/1")
+            const recordB = new ConcreteLocalFDORecord("LOCAL/2")
             await publishAll(backend, recordA, recordB)
 
-            const result = await backend.publishContinuous({
-                mappingPID,
-                graph: newGraphWithRecords(recordA, recordB),
-                delete: [],
-            })
+            const result = await backend.publishContinuous(
+                newMappingResult([recordA, recordB]),
+            )
 
             expect(result.graph.getRecords()).toHaveLength(2)
             expect(result.graph.getRecord(recordA.PID!)).toBeDefined()
@@ -199,15 +204,13 @@ describe("LocalTestingBackend", () => {
 
         it("returns the PIDs of the deleted records", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/1")
+            const record = new ConcreteLocalFDORecord("LOCAL/1")
             await publishAll(backend, record)
             const pid = record.PID!
 
-            const result = await backend.publishContinuous({
-                mappingPID,
-                graph: newGraphWithRecords(),
-                delete: [pid],
-            })
+            const result = await backend.publishContinuous(
+                newMappingResult([], [pid]),
+            )
 
             expect(result.deleted).toEqual([pid])
         })
@@ -215,21 +218,42 @@ describe("LocalTestingBackend", () => {
         it("does not report a PID that was not published as deleted", async () => {
             const backend = new LocalTestingBackend()
 
-            const result = await backend.publishContinuous({
-                mappingPID,
-                graph: newGraphWithRecords(),
-                delete: ["TEST/unknown"],
-            })
+            const result = await backend.publishContinuous(
+                newMappingResult([], ["TEST/unknown"]),
+            )
 
             expect(result.deleted).toEqual([])
+        })
+
+        it("publishes the records that are updated by the mapping", async () => {
+            const backend = new LocalTestingBackend()
+            const record = new ConcreteLocalFDORecord("LOCAL/1")
+            record.set("attr/a", "v1")
+            await publishAll(backend, record)
+            const firstPID = record.PID!
+
+            // The second run of the same mapping updates the record: it keeps
+            // the PID it was published with.
+            const secondRun = new ConcreteLocalFDORecord("LOCAL/1")
+            secondRun.set("attr/a", "v2")
+
+            const result = await backend.publishContinuous({
+                mappingPID,
+                create: new LocalFDOGraph(),
+                update: newGraphWithRecords(secondRun),
+                delete: [],
+            })
+
+            expect(secondRun.PID).toBe(firstPID)
+            expect(result.graph.getRecord(firstPID)?.get("attr/a")).toBe("v2")
         })
     })
 
     describe("publishGraph", () => {
         it("publishes all the records of the graph", async () => {
             const backend = new LocalTestingBackend()
-            const recordA = new ConcreteMappedFDORecord("LOCAL/a")
-            const recordB = new ConcreteMappedFDORecord("LOCAL/b")
+            const recordA = new ConcreteLocalFDORecord("LOCAL/a")
+            const recordB = new ConcreteLocalFDORecord("LOCAL/b")
 
             const published = await backend.publishGraph(
                 newGraphWithRecords(recordA, recordB),
@@ -242,7 +266,7 @@ describe("LocalTestingBackend", () => {
 
         it("returns the published records with their PIDs", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/a")
+            const record = new ConcreteLocalFDORecord("LOCAL/a")
             record.set("attr/a", "value")
 
             const published = await backend.publishGraph(
@@ -258,7 +282,7 @@ describe("LocalTestingBackend", () => {
             const backend = new LocalTestingBackend()
 
             await backend.publishGraph(
-                newGraphWithRecords(new ConcreteMappedFDORecord("LOCAL/a")),
+                newGraphWithRecords(new ConcreteLocalFDORecord("LOCAL/a")),
             )
 
             expect(await backend.resolveRecord(mappingPID)).toBeUndefined()
@@ -266,7 +290,7 @@ describe("LocalTestingBackend", () => {
 
         it("does not reference a mapping from the published records", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/a")
+            const record = new ConcreteLocalFDORecord("LOCAL/a")
 
             const published = await backend.publishGraph(
                 newGraphWithRecords(record),
@@ -279,7 +303,7 @@ describe("LocalTestingBackend", () => {
 
         it("keeps the own local ID of the published records", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/a")
+            const record = new ConcreteLocalFDORecord("LOCAL/a")
 
             const published = await backend.publishGraph(
                 newGraphWithRecords(record),
@@ -292,8 +316,8 @@ describe("LocalTestingBackend", () => {
 
         it("fixes up the references between the published records", async () => {
             const backend = new LocalTestingBackend()
-            const recordA = new ConcreteMappedFDORecord("LOCAL/a")
-            const recordB = new ConcreteMappedFDORecord("LOCAL/b")
+            const recordA = new ConcreteLocalFDORecord("LOCAL/a")
+            const recordB = new ConcreteLocalFDORecord("LOCAL/b")
             recordA.addReference(fromAttr, "LOCAL/b")
 
             const published = await backend.publishGraph(
@@ -308,8 +332,8 @@ describe("LocalTestingBackend", () => {
         it("publishes records without a local ID", async () => {
             const backend = new LocalTestingBackend()
             const record = new ConcreteFDORecord()
-            const graph = new MappedGraph()
-            graph.addRecord(record as unknown as ConcreteMappedFDORecord)
+            const graph = new LocalFDOGraph()
+            graph.addRecord(record as unknown as ConcreteLocalFDORecord)
 
             const published = await backend.publishGraph(graph)
 
@@ -319,11 +343,11 @@ describe("LocalTestingBackend", () => {
 
         it("keeps the PID of a record that was published before", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/a")
+            const record = new ConcreteLocalFDORecord("LOCAL/a")
             await backend.publishGraph(newGraphWithRecords(record))
             const firstPID = record.PID!
 
-            const secondRun = new ConcreteMappedFDORecord("LOCAL/a")
+            const secondRun = new ConcreteLocalFDORecord("LOCAL/a")
             await backend.publishGraph(newGraphWithRecords(secondRun))
 
             expect(secondRun.PID).toBe(firstPID)
@@ -331,10 +355,10 @@ describe("LocalTestingBackend", () => {
 
         it("does not reuse the PID of a record of a mapping", async () => {
             const backend = new LocalTestingBackend()
-            const mapped = new ConcreteMappedFDORecord("LOCAL/a")
+            const mapped = new ConcreteLocalFDORecord("LOCAL/a")
             await publishAll(backend, mapped)
 
-            const unmapped = new ConcreteMappedFDORecord("LOCAL/a")
+            const unmapped = new ConcreteLocalFDORecord("LOCAL/a")
             await backend.publishGraph(newGraphWithRecords(unmapped))
 
             expect(unmapped.PID).not.toBe(mapped.PID)
@@ -344,7 +368,7 @@ describe("LocalTestingBackend", () => {
     describe("publishRecord", () => {
         it("assigns a PID to the record", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/a")
+            const record = new ConcreteLocalFDORecord("LOCAL/a")
 
             const published = await backend.publishRecord(record)
 
@@ -354,7 +378,7 @@ describe("LocalTestingBackend", () => {
 
         it("publishes the record so that it can be resolved", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/a")
+            const record = new ConcreteLocalFDORecord("LOCAL/a")
             record.set("attr/a", "value")
 
             const published = await backend.publishRecord(record)
@@ -365,7 +389,7 @@ describe("LocalTestingBackend", () => {
 
         it("keeps the own local ID of the record", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/a")
+            const record = new ConcreteLocalFDORecord("LOCAL/a")
 
             const published = await backend.publishRecord(record)
 
@@ -374,7 +398,7 @@ describe("LocalTestingBackend", () => {
 
         it("does not reference a mapping from the published record", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/a")
+            const record = new ConcreteLocalFDORecord("LOCAL/a")
 
             const published = await backend.publishRecord(record)
 
@@ -393,11 +417,11 @@ describe("LocalTestingBackend", () => {
 
         it("keeps the PID of a record that was published before", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/a")
+            const record = new ConcreteLocalFDORecord("LOCAL/a")
             await backend.publishRecord(record)
             const firstPID = record.PID!
 
-            const secondRun = new ConcreteMappedFDORecord("LOCAL/a")
+            const secondRun = new ConcreteLocalFDORecord("LOCAL/a")
             await backend.publishRecord(secondRun)
 
             expect(secondRun.PID).toBe(firstPID)
@@ -405,7 +429,7 @@ describe("LocalTestingBackend", () => {
 
         it("keeps the back-reference to the mapping of the record", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/a")
+            const record = new ConcreteLocalFDORecord("LOCAL/a")
             await publishAll(backend, record)
 
             const published = await backend.publishRecord(record)
@@ -417,8 +441,8 @@ describe("LocalTestingBackend", () => {
     describe("the references of the published records", () => {
         it("are fixed up to the PIDs of the records of the mapping", async () => {
             const backend = new LocalTestingBackend()
-            const recordA = new ConcreteMappedFDORecord("LOCAL/a")
-            const recordB = new ConcreteMappedFDORecord("LOCAL/b")
+            const recordA = new ConcreteLocalFDORecord("LOCAL/a")
+            const recordB = new ConcreteLocalFDORecord("LOCAL/b")
             recordA.addReference(fromAttr, "LOCAL/b")
             await publishAll(backend, recordA, recordB)
 
@@ -436,16 +460,16 @@ describe("LocalTestingBackend", () => {
 
         it("are fixed up to the PIDs of the records of a later run", async () => {
             const backend = new LocalTestingBackend()
-            const firstRun = new ConcreteMappedFDORecord("LOCAL/a")
-            const target = new ConcreteMappedFDORecord("LOCAL/b")
+            const firstRun = new ConcreteLocalFDORecord("LOCAL/a")
+            const target = new ConcreteLocalFDORecord("LOCAL/b")
             firstRun.addReference(fromAttr, "LOCAL/b")
             await publishAll(backend, firstRun, target)
 
             // The second run of the same mapping creates new records for the
             // same local IDs. They keep the PIDs of the first run, and the
             // references are fixed up to those PIDs.
-            const secondRun = new ConcreteMappedFDORecord("LOCAL/a")
-            const secondTarget = new ConcreteMappedFDORecord("LOCAL/b")
+            const secondRun = new ConcreteLocalFDORecord("LOCAL/a")
+            const secondTarget = new ConcreteLocalFDORecord("LOCAL/b")
             secondRun.addReference(fromAttr, "LOCAL/b")
             await publishAll(backend, secondRun, secondTarget)
 
@@ -472,7 +496,7 @@ describe("LocalTestingBackend", () => {
 
         it("keep the reference to a record that is not part of the mapping", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/a")
+            const record = new ConcreteLocalFDORecord("LOCAL/a")
             record.addReference(fromAttr, "LOCAL/unknown")
             await publishAll(backend, record)
 
@@ -490,7 +514,7 @@ describe("LocalTestingBackend", () => {
 
         it("leave the local ID in attributes that do not hold references", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/a")
+            const record = new ConcreteLocalFDORecord("LOCAL/a")
             record.set("attr/sourceId", "LOCAL/a")
             record.set("attr/relatedIds", ["LOCAL/a", "LOCAL/b"])
             await publishAll(backend, record)
@@ -508,7 +532,7 @@ describe("LocalTestingBackend", () => {
     describe("the own local ID of a published record", () => {
         it("is kept in the attribute of the record", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/a")
+            const record = new ConcreteLocalFDORecord("LOCAL/a")
             await publishAll(backend, record)
 
             const resolved = await backend.resolveRecord(record.PID!)
@@ -518,8 +542,8 @@ describe("LocalTestingBackend", () => {
 
         it("is the only local ID of the published record", async () => {
             const backend = new LocalTestingBackend()
-            const recordA = new ConcreteMappedFDORecord("LOCAL/a")
-            const recordB = new ConcreteMappedFDORecord("LOCAL/b")
+            const recordA = new ConcreteLocalFDORecord("LOCAL/a")
+            const recordB = new ConcreteLocalFDORecord("LOCAL/b")
             recordA.addReference(fromAttr, "LOCAL/b")
             await publishAll(backend, recordA, recordB)
 
@@ -541,10 +565,10 @@ describe("LocalTestingBackend", () => {
         it("is not added to a record without a local ID", async () => {
             const backend = new LocalTestingBackend()
             const record = new ConcreteFDORecord()
-            const graph = new MappedGraph()
-            graph.addRecord(record as unknown as ConcreteMappedFDORecord)
 
-            await backend.publishContinuous({ mappingPID, graph, delete: [] })
+            await backend.publishContinuous(
+                newMappingResult([record as unknown as ConcreteLocalFDORecord]),
+            )
 
             const resolved = await backend.resolveRecord(record.PID!)
             expect(resolved?.get("attr/localId")).toBeUndefined()
@@ -554,7 +578,7 @@ describe("LocalTestingBackend", () => {
     describe("the high level FDO record of the mapping", () => {
         it("is a record with the PID of the mapping", async () => {
             const backend = new LocalTestingBackend()
-            await publishAll(backend, new ConcreteMappedFDORecord("LOCAL/1"))
+            await publishAll(backend, new ConcreteLocalFDORecord("LOCAL/1"))
 
             const mappingRecord = await backend.resolveRecord(mappingPID)
 
@@ -564,8 +588,8 @@ describe("LocalTestingBackend", () => {
 
         it("references all the records that are part of the mapping", async () => {
             const backend = new LocalTestingBackend()
-            const recordA = new ConcreteMappedFDORecord("LOCAL/1")
-            const recordB = new ConcreteMappedFDORecord("LOCAL/2")
+            const recordA = new ConcreteLocalFDORecord("LOCAL/1")
+            const recordB = new ConcreteLocalFDORecord("LOCAL/2")
             await publishAll(backend, recordA, recordB)
 
             const mappingRecord = await backend.resolveRecord(mappingPID)
@@ -592,7 +616,7 @@ describe("LocalTestingBackend", () => {
 
         it("is referenced back by every record of the mapping", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/1")
+            const record = new ConcreteLocalFDORecord("LOCAL/1")
             await publishAll(backend, record)
 
             const resolved = await backend.resolveRecord(record.PID!)
@@ -602,7 +626,7 @@ describe("LocalTestingBackend", () => {
 
         it("keeps an already existing back-reference of a record", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/1")
+            const record = new ConcreteLocalFDORecord("LOCAL/1")
             record.set("attr/partOfMapping", "existing/mapping")
             await publishAll(backend, record)
 
@@ -616,7 +640,7 @@ describe("LocalTestingBackend", () => {
 
         it("keeps the already existing back-references of a record", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/1")
+            const record = new ConcreteLocalFDORecord("LOCAL/1")
             record.set("attr/partOfMapping", [
                 "existing/mapping-1",
                 "existing/mapping-2",
@@ -634,7 +658,7 @@ describe("LocalTestingBackend", () => {
 
         it("does not contain the records of another mapping", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/1")
+            const record = new ConcreteLocalFDORecord("LOCAL/1")
             await publishAll(backend, record)
 
             const otherMappingRecord =
@@ -645,10 +669,10 @@ describe("LocalTestingBackend", () => {
 
         it("is updated when the mapping is published again", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/1")
+            const record = new ConcreteLocalFDORecord("LOCAL/1")
             await publishAll(backend, record)
 
-            const secondRun = new ConcreteMappedFDORecord("LOCAL/2")
+            const secondRun = new ConcreteLocalFDORecord("LOCAL/2")
             await publishAll(backend, secondRun)
 
             const mappingRecord = await backend.resolveRecord(mappingPID)
@@ -662,7 +686,7 @@ describe("LocalTestingBackend", () => {
     describe("resolveRecord", () => {
         it("returns a record with the same PID, attributes, references and profiles", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/1")
+            const record = new ConcreteLocalFDORecord("LOCAL/1")
             record.addProfile(new ConcreteProfile(def), {
                 datasetName: "My Dataset",
                 authors: ["a1", "a2"],
@@ -701,7 +725,7 @@ describe("LocalTestingBackend", () => {
 
         it("returns a snapshot that is unaffected by later changes to the published record", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/1")
+            const record = new ConcreteLocalFDORecord("LOCAL/1")
             record.set("attr/a", "before")
             await publishAll(backend, record)
 
@@ -714,7 +738,7 @@ describe("LocalTestingBackend", () => {
         it("resolves records from any mapping published through any backend", async () => {
             const backendA = new LocalTestingBackend()
             const backendB = new LocalTestingBackend()
-            const recordA = new ConcreteMappedFDORecord("LOCAL/a")
+            const recordA = new ConcreteLocalFDORecord("LOCAL/a")
             await publishAll(backendA, recordA)
 
             expect(await backendB.resolveRecord(recordA.PID!)).toBeDefined()
@@ -754,8 +778,8 @@ describe("LocalTestingBackend", () => {
 
         it("resolves the records of each mapping independently", async () => {
             const backend = new LocalTestingBackend()
-            const recordA = new ConcreteMappedFDORecord("LOCAL/a")
-            const recordB = new ConcreteMappedFDORecord("LOCAL/b")
+            const recordA = new ConcreteLocalFDORecord("LOCAL/a")
+            const recordB = new ConcreteLocalFDORecord("LOCAL/b")
             await publishFor(backend, "TEST/mapping-a", recordA)
             await publishFor(backend, "TEST/mapping-b", recordB)
 
@@ -779,7 +803,7 @@ describe("LocalTestingBackend", () => {
     describe("resetStore", () => {
         it("clears all published records and PID assignments", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteMappedFDORecord("LOCAL/1")
+            const record = new ConcreteLocalFDORecord("LOCAL/1")
             await publishAll(backend, record)
 
             LocalTestingBackend.resetStore()

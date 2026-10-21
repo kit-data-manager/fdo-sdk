@@ -1,13 +1,13 @@
 import type {
     PID,
     PublishedFDORecord,
-    PublishedMappedFDORecord,
-} from "@fdo-sdk/primitives"
-import type { ReadOnlyFDOGraph } from "@fdo-sdk/primitives"
+    PublishedLocalFDORecord,
+} from "../index.js"
+import type { ReadOnlyFDOGraph } from "../index.js"
 
 export interface ResolveAdapter {
     resolveMappingRecords(
         mappingPID: PID,
-    ): Promise<ReadOnlyFDOGraph<PublishedMappedFDORecord>>
+    ): Promise<ReadOnlyFDOGraph<PublishedLocalFDORecord>>
     resolveRecord(recordPID: PID): Promise<PublishedFDORecord | undefined>
 }

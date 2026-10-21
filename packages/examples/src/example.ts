@@ -64,7 +64,13 @@ for (const experiment of experimentsData.creepExperiments) {
 
 // The graph is built before it is published: building realizes the
 // bidirectional references, the result of the build is the mapping result.
+// The result holds the records that are created by the mapping and the records
+// that are updated by it.
 const result = context.build()
 
-fs.writeFile("./result.json", JSON.stringify(result.graph, null, 2), () => {})
+fs.writeFile(
+    "./result.json",
+    JSON.stringify({ create: result.create, update: result.update }, null, 2),
+    () => {},
+)
 console.log("Resulting graph was written to result.json")

@@ -1,4 +1,3 @@
-import type { MappingResult, PublishResult } from "../types.js"
 import type {
     FDORecord,
     PublishedFDORecord,
@@ -6,7 +5,6 @@ import type {
 } from "@fdo-sdk/primitives"
 
 export interface PublishAdapter {
-    publishContinuous(mappingResult: MappingResult): Promise<PublishResult>
     publishGraph(
         graph: ReadOnlyFDOGraph<FDORecord>,
     ): Promise<ReadOnlyFDOGraph<PublishedFDORecord>>

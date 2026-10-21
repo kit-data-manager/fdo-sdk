@@ -1,3 +1,2 @@
 export * from "./MappingContext.js"
-export * from "./PublishAdapter.js"
-export * from "./ResolveAdapter.js"
+export * from "./ContinuousPublishAdapter.js"

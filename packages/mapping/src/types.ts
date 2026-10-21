@@ -1,26 +1,30 @@
 import type {
-    MappedFDORecord,
+    LocalFDORecord,
     PID,
+    PublishedLocalFDORecord,
     ReadOnlyFDOGraph,
 } from "@fdo-sdk/primitives"
-import type { PublishedMappedFDORecord } from "@fdo-sdk/primitives"
 
+/**
+ * The result of a continuous mapping operation
+ */
 export type MappingResult = {
     /**
      * The PID of the mapping. It identifies the mapping and is also the PID of
      * the high level FDO record that represents the mapping.
      */
     mappingPID: PID
-    graph: ReadOnlyFDOGraph<MappedFDORecord>
+    create: ReadOnlyFDOGraph<LocalFDORecord>
+    update: ReadOnlyFDOGraph<LocalFDORecord>
     delete: PID[]
 }
 
-export type PublishResult = {
+export type ContinuousPublishResult = {
     /**
      * The PID of the mapping. It identifies the mapping and is also the PID of
      * the high level FDO record that represents the mapping.
      */
     mappingPID: PID
-    graph: ReadOnlyFDOGraph<PublishedMappedFDORecord>
+    graph: ReadOnlyFDOGraph<PublishedLocalFDORecord>
     deleted: PID[]
 }

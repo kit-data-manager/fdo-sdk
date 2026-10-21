@@ -1,7 +1,7 @@
 import type {
     Attribute,
     FDORecord,
-    MappedFDORecord,
+    LocalFDORecord,
     PublishedFDORecord,
 } from "../interfaces/index.js"
 import {
@@ -16,6 +16,12 @@ import { toArray } from "../utils.js"
 import type { Profile } from "../interfaces/Profile.js"
 import { isKeep, isReference, isSkip } from "./markers.js"
 
+/**
+ * Base implementation of the {@link FDORecord} interface. Can hold a PID to be
+ * a {@link PublishedFDORecord} (use {@link isPublished} to check).
+ *
+ * Consider using {@link ConcreteLocalFDORecord} if you are creating FDOs
+ */
 export class ConcreteFDORecord implements FDORecord {
     readonly PID: PID | undefined
 
@@ -126,7 +132,7 @@ export class ConcreteFDORecord implements FDORecord {
 
     addReference(
         fromAttribute: PID | Attribute<PID | PID[]>,
-        toRecord: PID | LocalID | MappedFDORecord | PublishedFDORecord,
+        toRecord: PID | LocalID | LocalFDORecord | PublishedFDORecord,
     ): void {
         const target =
             typeof toRecord === "object"
@@ -150,7 +156,7 @@ export class ConcreteFDORecord implements FDORecord {
     addReferenceBidi(
         fromAttribute: PID | Attribute<PID | PID[]>,
         inverseAttribute: PID | Attribute<PID | PID[]>,
-        toRecord: PID | LocalID | MappedFDORecord,
+        toRecord: PID | LocalID | LocalFDORecord,
     ): void {
         const target =
             typeof toRecord === "object"
