@@ -4,7 +4,8 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "build": "typedoc",
+        "build": "typedoc && pnpm build:markdown",
+        "build:markdown": "typedoc --options typedoc.markdown.json",
         "generate": "typedoc",
         "serve": "serve generated/"
     },
@@ -16,7 +17,8 @@
         "targets": {
             "build": {
                 "outputs": [
-                    "{projectRoot}/generated"
+                    "{projectRoot}/generated",
+                    "{projectRoot}/generated-md"
                 ]
             }
         }
@@ -25,6 +27,7 @@
         "@fdo-sdk/mapping": "workspace:*",
         "@fdo-sdk/primitives": "workspace:*",
         "serve": "^14.2.6",
-        "typedoc": "^0.28.20"
+        "typedoc": "^0.28.20",
+        "typedoc-plugin-markdown": "^4.14.1"
     }
 }

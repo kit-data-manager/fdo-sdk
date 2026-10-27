@@ -1,0 +1,13 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "plugin": ["typedoc-plugin-markdown"],
+    "entryPoints": ["src/primitives.ts", "src/mapping.ts"],
+    "out": "generated-md",
+    "tsconfig": "./tsconfig.json",
+    "excludeInternal": true,
+    "externalSymbolLinkMappings": {
+        "typescript": {
+            "JSON.stringify": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify"
+        }
+    }
+}
