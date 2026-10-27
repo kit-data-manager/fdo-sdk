@@ -23,6 +23,7 @@
             "outputs": ["{projectRoot}/dist"]
         },
         "test": {
+            "dependsOn": ["^build"],
             "cache": true,
             "inputs": ["default", "^production"],
             "outputs": ["{projectRoot}/coverage"]

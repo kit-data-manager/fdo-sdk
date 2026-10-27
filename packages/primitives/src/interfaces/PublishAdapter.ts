@@ -1,8 +1,5 @@
-import type {
-    FDORecord,
-    PublishedFDORecord,
-    ReadOnlyFDOGraph,
-} from "@fdo-sdk/primitives"
+import type { ReadOnlyFDOGraph } from "./FDOGraph.js"
+import type { FDORecord, PublishedFDORecord } from "./FDORecord.js"
 
 export interface PublishAdapter {
     publishGraph(
