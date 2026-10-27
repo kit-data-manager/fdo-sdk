@@ -4,7 +4,7 @@ import {
     DataResourceProfile,
     creepExperimentAttributes,
 } from "./generated/creepProfiles.js"
-import { ConcreteMappingContext, type MappingContext } from "@fdo-sdk/mapping"
+import { ContinuousMappingContext, type MappingContext } from "@fdo-sdk/mapping"
 import { type FDORecord, skip, referenceBidi } from "@fdo-sdk/primitives"
 import experimentsData from "../assets/creep-experiments.json" with { type: "json" }
 import * as fs from "node:fs"
@@ -12,7 +12,7 @@ type Experiment = (typeof experimentsData)["creepExperiments"][number]
 type DataFile = Experiment["dataResources"][number]
 
 const mappingPID = "TEST/creep-experiments"
-const context: MappingContext = new ConcreteMappingContext(mappingPID)
+const context: MappingContext = new ContinuousMappingContext(mappingPID)
 
 function addDataResource(record: FDORecord, file: DataFile) {
     record.addProfile(DataResourceProfile, {

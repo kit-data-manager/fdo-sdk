@@ -4,7 +4,8 @@ import {
     PublishedFDOGraph,
     type PublishedLocalFDORecord,
 } from "@fdo-sdk/primitives"
-import { ConcreteMappingContext } from "../src/index.js"
+import { ContinuousMappingContext } from "../src/index.js"
+import type { ContinuousResolveAdapter } from "../src/index.js"
 
 const mappingPID = "TEST/mapping"
 
@@ -18,10 +19,10 @@ function remoteGraphWith(
     return graph
 }
 
-describe("ConcreteMappingContext", () => {
+describe("ContinuousMappingContext", () => {
     describe("build", () => {
         it("returns the built local graph", () => {
-            const context = new ConcreteMappingContext(mappingPID)
+            const context = new ContinuousMappingContext(mappingPID)
             context.newRecord("LOCAL/1")
 
             const result = context.build()
@@ -30,12 +31,17 @@ describe("ConcreteMappingContext", () => {
             expect(result.delete).toEqual([])
         })
 
-        it("reports the PIDs of the remote records that are not part of the mapping anymore", () => {
+        it("reports the PIDs of the remote records that are not part of the mapping anymore", async () => {
             const remote = remoteGraphWith(
                 new ConcreteLocalFDORecord("LOCAL/1", "TEST/1"),
                 new ConcreteLocalFDORecord("LOCAL/2", "TEST/2"),
             )
-            const context = new ConcreteMappingContext(mappingPID, remote)
+            const context = new ContinuousMappingContext(mappingPID)
+            const resolver: ContinuousResolveAdapter = {
+                resolveMappingRecords: async () => remote,
+                resolveRecord: async () => undefined,
+            }
+            await context.resolveRemoteGraph(resolver)
             context.newRecord("LOCAL/1")
 
             const result = context.build()
@@ -49,7 +55,7 @@ describe("ConcreteMappingContext", () => {
         })
 
         it("realizes the bidirectional references of the local graph", () => {
-            const context = new ConcreteMappingContext(mappingPID)
+            const context = new ContinuousMappingContext(mappingPID)
             const source = context.newRecord("LOCAL/source")
             source.addReferenceBidi("attr/from", "attr/to", "LOCAL/target")
             context.newRecord("LOCAL/target")

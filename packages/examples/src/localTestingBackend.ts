@@ -40,13 +40,13 @@ import {
     type ProfileDefinition,
     type PublishedLocalFDORecord,
     type ReadOnlyFDOGraph,
-    type ResolveAdapter,
 } from "@fdo-sdk/primitives"
 import {
-    ConcreteMappingContext,
+    ContinuousMappingContext,
     LocalTestingBackend,
     type ContinuousPublishAdapter,
     type ContinuousPublishResult,
+    type ContinuousResolveAdapter,
     type MappingContext,
     type MappingResult,
 } from "@fdo-sdk/mapping"
@@ -267,7 +267,7 @@ async function publishMapping(
 }
 
 async function resolveMapping(
-    resolver: ResolveAdapter,
+    resolver: ContinuousResolveAdapter,
     mappingPID: PID,
 ): Promise<ReadOnlyFDOGraph<PublishedLocalFDORecord>> {
     return await resolver.resolveMappingRecords(mappingPID)
@@ -285,7 +285,7 @@ function summarize(graph: ReadOnlyFDOGraph<PublishedLocalFDORecord>): unknown {
 
 section("1. Setup")
 
-const context: MappingContext = new ConcreteMappingContext(mappingPID)
+const context: MappingContext = new ContinuousMappingContext(mappingPID)
 
 // LocalTestingBackend is the concrete class under test, but everything below
 // only ever talks to it through the ContinuousPublishAdapter / ResolveAdapter
@@ -293,10 +293,10 @@ const context: MappingContext = new ConcreteMappingContext(mappingPID)
 // The backend is not bound to a single mapping: the mapping is determined by
 // the mapping result that is published, so one backend can serve any number
 // of mappings (see section 8).
-const backend: ContinuousPublishAdapter & ResolveAdapter =
+const backend: ContinuousPublishAdapter & ContinuousResolveAdapter =
     new LocalTestingBackend()
 const publisher: ContinuousPublishAdapter = backend
-const resolver: ResolveAdapter = backend
+const resolver: ContinuousResolveAdapter = backend
 
 show("Mapping PID", mappingPID)
 show("Fresh local graph records", context.localGraph.getRecords())
@@ -461,11 +461,9 @@ section("7. Update cycle")
 // The backend keeps the PID of a record stable as long as it is published
 // under the same local ID, so the dataset keeps its PID even though it is
 // mapped from scratch.
-const publishedRecords = await resolveMapping(resolver, mappingPID)
-const updateContext: MappingContext = new ConcreteMappingContext(
-    mappingPID,
-    publishedRecords,
-)
+const updateContext: MappingContext = new ContinuousMappingContext(mappingPID)
+
+await updateContext.resolveRemoteGraph(resolver)
 
 mapping(updateContext, updatedSourceData)
 
@@ -515,7 +513,9 @@ section("8. Mapping isolation")
 // backend is not bound to a single mapping. All backend instances share one
 // store, so the records of the other mapping are visible to the first mapping
 // as well.
-const otherContext: MappingContext = new ConcreteMappingContext(otherMappingPID)
+const otherContext: MappingContext = new ContinuousMappingContext(
+    otherMappingPID,
+)
 
 const release = otherContext.newRecord("LOCAL/release/v1")
 release.set(titleAttr, "Climate Index 2026 release announcement")
@@ -552,7 +552,9 @@ section("9. Publishing without a mapping")
 // not point back to one. They are published all the same: they get a PID, they
 // are stored and they can be resolved.
 
-const noticeContext: MappingContext = new ConcreteMappingContext("TEST/notice")
+const noticeContext: MappingContext = new ContinuousMappingContext(
+    "TEST/notice",
+)
 const notice = noticeContext.newRecord("LOCAL/notice")
 notice.set(titleAttr, "Climate Index 2026 release announcement")
 
@@ -573,7 +575,7 @@ show(
 // "LOCAL/graph/part", so there is no published target to fix the reference up
 // to, and the published record keeps the local ID of the reference. Either add
 // a part record to the graph, or reword this comment and the labels below.
-const graphContext: MappingContext = new ConcreteMappingContext("TEST/graph")
+const graphContext: MappingContext = new ContinuousMappingContext("TEST/graph")
 const graphDataset = graphContext.newRecord("LOCAL/graph/dataset")
 graphDataset.addReference(hasPartAttr, "LOCAL/graph/part")
 

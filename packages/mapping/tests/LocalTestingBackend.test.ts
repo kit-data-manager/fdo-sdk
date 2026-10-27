@@ -9,7 +9,7 @@ import {
     type ProfileDefinition,
 } from "@fdo-sdk/primitives"
 import {
-    ConcreteMappingContext,
+    ContinuousMappingContext,
     LocalTestingBackend,
     type MappingResult,
 } from "../src/index.js"
@@ -481,7 +481,7 @@ describe("LocalTestingBackend", () => {
 
         it("include the back-references of bidirectional references", async () => {
             const backend = new LocalTestingBackend()
-            const context = new ConcreteMappingContext(mappingPID)
+            const context = new ContinuousMappingContext(mappingPID)
             const recordA = context.newRecord("LOCAL/a")
             const recordB = context.newRecord("LOCAL/b")
             recordA.addReferenceBidi(fromAttr, toAttr, "LOCAL/b")
@@ -748,7 +748,7 @@ describe("LocalTestingBackend", () => {
     describe("resolveMappingRecords", () => {
         it("returns a graph of all records published for the mapping", async () => {
             const backend = new LocalTestingBackend()
-            const context = new ConcreteMappingContext(mappingPID)
+            const context = new ContinuousMappingContext(mappingPID)
             context.newRecord("LOCAL/1")
             context.newRecord("LOCAL/2")
             await backend.publishContinuous(context.build())
@@ -767,7 +767,7 @@ describe("LocalTestingBackend", () => {
 
         it("does not contain the high level FDO record of the mapping", async () => {
             const backend = new LocalTestingBackend()
-            const context = new ConcreteMappingContext(mappingPID)
+            const context = new ContinuousMappingContext(mappingPID)
             context.newRecord("LOCAL/1")
             await backend.publishContinuous(context.build())
 

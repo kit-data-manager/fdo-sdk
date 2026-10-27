@@ -6,6 +6,7 @@ import type {
 } from "@fdo-sdk/primitives"
 import type { PID } from "@fdo-sdk/primitives"
 import type { MappingResult } from "../types.js"
+import type { ContinuousResolveAdapter } from "./ContinuousResolveAdapter.js"
 
 /**
  * The context of a data to FDO record mapping. Holds the local graph, which
@@ -29,6 +30,18 @@ export interface MappingContext {
      * The remote graph contains all FDO records that have been published by this mapping in the past.
      */
     readonly remoteGraph: ReadOnlyFDOGraph
+
+    /**
+     * Whether the remote graph for this mapping has already been fetched. If false, the {@link remoteGraph} is empty.
+     * If true, the {@link remoteGraph} contains the remote graph, e.g. the most recently published result of this mapping.
+     */
+    get hasResolvedRemoteGraph(): boolean
+
+    /**
+     * Resolve the (previously published) remote graph of this mapping. This is only necessary for continuous mappings.
+     * @param resolver Continuous resolve adapter that resolved the remote graph that has been produced in the past by this continuous mapping
+     */
+    resolveRemoteGraph(resolver: ContinuousResolveAdapter): Promise<void>
 
     /**
      * Create a new record. This is the standard method to add a record to the
