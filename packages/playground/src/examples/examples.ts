@@ -10,94 +10,110 @@ export const EXAMPLES: Example[] = [
         id: "records",
         title: "Records & profiles",
         description:
-            "Build records with profiles, markers and references, publish them and resolve them back.",
-        source: `// Build FDO records with profiles, markers and references, then publish
-// them with the playground backend. The published graph on the right shows
-// the current state of the store after every publish.
+            "Build records with the simple types profiles, markers and references, publish them and resolve them back.",
+        source: `// Build FDO records with the profiles and attributes of
+// @fdo-sdk/simple-types - the simple types used for testing in the
+// department - and publish them with the playground backend. The published
+// graph on the right shows the current state of the store after every
+// publish.
 import {
     ConcreteLocalFDORecord,
-    ConcreteProfile,
     LocalFDOGraph,
     keep,
-    reference,
     referenceBidi,
+    reference,
     skip,
 } from "@fdo-sdk/primitives"
+import { SIMPLE_ATTRIBUTES, SIMPLE_PROFILES } from "@fdo-sdk/simple-types"
 import { PlaygroundBackend } from "@fdo-sdk/playground"
 
-PlaygroundBackend.resetStore()
 const backend = new PlaygroundBackend()
-
-// Attributes are globally identified by a PID.
-const nameAttr = { pid: "attr/name", readableName: "name" }
-const descriptionAttr = { pid: "attr/description", readableName: "description" }
-const titleAttr = { pid: "attr/title", readableName: "title" }
-const hasAuthorAttr = { pid: "attr/hasAuthor", readableName: "hasAuthor" }
-const authoredAttr = { pid: "attr/authoredDatasets", readableName: "authoredDatasets" }
-const hasPartAttr = { pid: "attr/hasPart", readableName: "hasPart" }
-
-// A profile bundles attributes: the keys are readable names, the values
-// the attribute PIDs the values are stored under.
-const datasetProfile = new ConcreteProfile({
-    pid: "profile/dataset",
-    readableName: "Dataset",
-    mapping: {
-        name: nameAttr.pid,
-        description: descriptionAttr.pid,
-        hasAuthor: hasAuthorAttr.pid,
-        hasPart: hasPartAttr.pid,
-    },
-})
-const authorProfile = new ConcreteProfile({
-    pid: "profile/author",
-    readableName: "Author",
-    mapping: { name: nameAttr.pid, authoredDatasets: authoredAttr.pid },
-})
-
-// Records are created with local IDs. The back-references of the
-// bidirectional references below do not exist yet - build() writes them.
 const graph = new LocalFDOGraph()
 
-const ada = new ConcreteLocalFDORecord("LOCAL/author/ada")
-ada.addProfile(authorProfile, {
-    name: "Ada Lovelace",
-    authoredDatasets: skip(),
-})
-const grace = new ConcreteLocalFDORecord("LOCAL/author/grace")
-grace.addProfile(authorProfile, {
-    name: "Grace Hopper",
-    authoredDatasets: skip(),
+// A software repository with the simple software profile. Every value is
+// stored under the attribute PID the profile maps the readable name to;
+// skip() leaves an attribute out even though the profile declares it.
+const software = new ConcreteLocalFDORecord("LOCAL/software/climate-tools")
+software.addProfile(SIMPLE_PROFILES.SOFTWARE, {
+    softwareRepositoryType: "git",
+    softwareLocation: "https://github.com/example/climate-tools",
+    softwareLicense: "MIT",
+    readmeLocation: skip(),
 })
 
-const supplement = new ConcreteLocalFDORecord("LOCAL/supplement/code")
-supplement.set(titleAttr, "Companion analysis code")
+// A data object of the software, with the data object profile. keep()
+// keeps a value that was set on the record before the profile was applied.
+const measurements = new ConcreteLocalFDORecord(
+    "LOCAL/data-object/measurements",
+)
+measurements.set(SIMPLE_ATTRIBUTES.DATA_OBJECT_LICENSE, "CC-BY-4.0")
+measurements.addProfile(SIMPLE_PROFILES.DATA_OBJECT, {
+    dataObjectLocation: "https://example.org/data/measurements.nc",
+    dataObjectLicense: keep(),
+    mimeType: "application/netcdf",
+    createdWithSoftware: reference(software)
+})
 
-const dataset = new ConcreteLocalFDORecord("LOCAL/dataset/climate-index")
-dataset.set(descriptionAttr, "A curated collection of climate measurements.")
-dataset.addProfile(datasetProfile, {
-    name: "Climate Index 2026",
-    description: keep(),
-    hasAuthor: [
-        referenceBidi(authoredAttr, "LOCAL/author/ada"),
-        referenceBidi(authoredAttr, "LOCAL/author/grace"),
+const analysis = new ConcreteLocalFDORecord("LOCAL/data-object/analysis")
+analysis.addProfile(SIMPLE_PROFILES.DATA_OBJECT, {
+    dataObjectLocation: "https://example.org/data/analysis.csv",
+    dataObjectLicense: "CC-BY-4.0",
+    mimeType: "text/csv",
+    createdWithSoftware: reference(software)
+})
+
+// Records do not need a profile: the two creators of the publication are
+// plain records that only serve as reference targets for now.
+const ada = new ConcreteLocalFDORecord("LOCAL/person/ada")
+const grace = new ConcreteLocalFDORecord("LOCAL/person/grace")
+
+// A publication describing the data objects. Profile values can be
+// reference markers as well: publicationCreator links to the creator
+// records, and build() writes the back-references on them.
+const publication = new ConcreteLocalFDORecord(
+    "LOCAL/publication/climate-index",
+)
+publication.addProfile(SIMPLE_PROFILES.PUBLICATION, {
+    doi: "10.1234/climate-index-2026",
+    publicationTitle: "Climate Index 2026",
+    publicationCreator: [
+        referenceBidi(
+            SIMPLE_ATTRIBUTES.PUBLICATION_CREATOR,
+            ada,
+        ),
+        referenceBidi(
+            SIMPLE_ATTRIBUTES.PUBLICATION_CREATOR,
+            grace,
+        ),
     ],
-    hasPart: [reference("LOCAL/supplement/code")],
+    hasPart: [
+        referenceBidi(
+            SIMPLE_ATTRIBUTES.IS_PART_OF, 
+            measurements
+        ), 
+        referenceBidi(
+            SIMPLE_ATTRIBUTES.IS_PART_OF, 
+            analysis
+        )
+    ]
 })
 
-for (const record of [ada, grace, supplement, dataset]) graph.addRecord(record)
-graph.build()
-
-console.log("Local graph:", graph.toJSON())
+for (const record of [
+    software,
+    measurements,
+    analysis,
+    ada,
+    grace,
+    publication,
+]) {
+    graph.addRecord(record)
+}
 
 // Publishing assigns a PID to every record and fixes the references up to
-// PIDs. Every record keeps its own local ID in attr/localId. The published
-// graph on the right is updated as soon as the store changes.
-const published = await backend.publishGraph(graph)
-console.log("Published:", published.toJSON())
+// PIDs. The published graph on the right is updated as soon as the store
+// changes.
+await backend.publishGraph(graph)
 
-// Published records can be resolved again, by PID or by local ID.
-const resolved = await backend.resolveRecord(dataset.PID)
-console.log("Resolved dataset:", resolved.toJSON())
 `,
     },
     {
@@ -108,68 +124,57 @@ console.log("Resolved dataset:", resolved.toJSON())
         source: `// A continuous mapping keeps published records in sync with changed
 // source data: run the mapping, build a diff against the remote graph,
 // publish, and only the changed records are created, updated or deleted.
-// The log tells you exactly which records were created, updated and deleted,
-// and the published graph on the right always shows the current store.
-import { ConcreteProfile, reference, referenceBidi, skip } from "@fdo-sdk/primitives"
+// The log tells you exactly which records were created, updated and
+// deleted, and the published graph on the right always shows the current
+// store.
+import { skip } from "@fdo-sdk/primitives"
+import { SIMPLE_PROFILES } from "@fdo-sdk/simple-types"
 import { ContinuousMappingContext } from "@fdo-sdk/mapping"
 import { PlaygroundBackend } from "@fdo-sdk/playground"
 
-PlaygroundBackend.resetStore()
 const backend = new PlaygroundBackend()
-const mappingPID = "TEST/mapping-climate"
-
-const nameAttr = { pid: "attr/name", readableName: "name" }
-const titleAttr = { pid: "attr/title", readableName: "title" }
-const hasAuthorAttr = { pid: "attr/hasAuthor", readableName: "hasAuthor" }
-const authoredAttr = { pid: "attr/authoredDatasets", readableName: "authoredDatasets" }
-const hasPartAttr = { pid: "attr/hasPart", readableName: "hasPart" }
-
-const datasetProfile = new ConcreteProfile({
-    pid: "profile/dataset",
-    readableName: "Dataset",
-    mapping: { name: nameAttr.pid, hasAuthor: hasAuthorAttr.pid, hasPart: hasPartAttr.pid },
-})
-const authorProfile = new ConcreteProfile({
-    pid: "profile/author",
-    readableName: "Author",
-    mapping: { name: nameAttr.pid, authoredDatasets: authoredAttr.pid },
-})
+const mappingPID = "TEST/mapping-climate-software"
 
 // The mapping is a pure function of the source data and the context, so it
 // can be run as often as needed - every run fills a fresh local graph.
 function mapping(context, source) {
-    for (const author of source.authors) {
-        const record = context.newRecord(author.localID)
-        record.addProfile(authorProfile, {
-            name: author.name,
-            authoredDatasets: skip(),
+    const software = context.newRecord(source.software.localID)
+    software.addProfile(SIMPLE_PROFILES.SOFTWARE, {
+        softwareRepositoryType: source.software.repositoryType,
+        softwareLocation: source.software.location,
+        softwareLicense: source.software.license,
+        readmeLocation: skip(),
+    })
+    for (const file of source.dataObjects) {
+        const record = context.newRecord(file.localID)
+        record.addProfile(SIMPLE_PROFILES.DATA_OBJECT, {
+            dataObjectLocation: file.location,
+            dataObjectLicense: file.license,
+            mimeType: file.mimeType,
         })
     }
-    for (const supplement of source.supplements) {
-        const record = context.newRecord(supplement.localID)
-        record.set(titleAttr, supplement.title)
-    }
-    const dataset = context.newRecord("LOCAL/dataset/climate-index")
-    dataset.addProfile(datasetProfile, {
-        name: source.datasetName,
-        hasAuthor: source.authors.map((author) =>
-            referenceBidi(authoredAttr, author.localID),
-        ),
-        hasPart: source.supplements.map((supplement) =>
-            reference(supplement.localID),
-        ),
-    })
 }
 
+const measurementsSource = {
+    localID: "LOCAL/data-object/measurements",
+    location: "https://example.org/data/measurements.nc",
+    license: "CC-BY-4.0",
+    mimeType: "application/netcdf",
+}
+const analysisSource = {
+    localID: "LOCAL/data-object/analysis",
+    location: "https://example.org/data/analysis.csv",
+    license: "CC-BY-4.0",
+    mimeType: "text/csv",
+}
 const initialData = {
-    datasetName: "Climate Index 2026",
-    authors: [
-        { localID: "LOCAL/author/ada", name: "Ada Lovelace" },
-        { localID: "LOCAL/author/grace", name: "Grace Hopper" },
-    ],
-    supplements: [
-        { localID: "LOCAL/supplement/code", title: "Companion analysis code" },
-    ],
+    software: {
+        localID: "LOCAL/software/climate-tools",
+        repositoryType: "git",
+        location: "https://github.com/example/climate-tools",
+        license: "MIT",
+    },
+    dataObjects: [measurementsSource, analysisSource],
 }
 
 // Run 1: publish the initial mapping.
@@ -178,14 +183,20 @@ mapping(firstContext, initialData)
 const firstResult = firstContext.build()
 await backend.publishContinuous(firstResult)
 
-// Run 2: changed source data. The remote graph is resolved into a fresh
-// context, so build() produces create/update/delete diffs. PIDs stay
-// stable for records that are still part of the mapping.
+// Run 2: changed source data - the software was relicensed and one data
+// object was replaced by a new version. The remote graph is resolved into
+// a fresh context, so build() produces create/update/delete diffs. PIDs
+// stay stable for records that are still part of the mapping.
 const updatedData = {
-    datasetName: "Climate Index 2026 (final)",
-    authors: initialData.authors,
-    supplements: [
-        { localID: "LOCAL/supplement/notes", title: "Analysis notes" },
+    software: { ...initialData.software, license: "Apache-2.0" },
+    dataObjects: [
+        measurementsSource,
+        {
+            localID: "LOCAL/data-object/analysis-v2",
+            location: "https://example.org/data/analysis-v2.csv",
+            license: "CC-BY-4.0",
+            mimeType: "text/csv",
+        },
     ],
 }
 
@@ -195,55 +206,53 @@ mapping(updateContext, updatedData)
 const updateResult = updateContext.build()
 console.log("Deleted records:", updateResult.delete)
 await backend.publishContinuous(updateResult)
-
-// The mapping itself is a high level record that references all of its
-// records - every record points back to it via attr/partOfMapping. Its
-// edges are drawn muted in the graph. All records stay in the published
-// graph on the right, with stable PIDs.
-const mappingRecord = await backend.resolveRecord(mappingPID)
-console.log("Mapping record:", mappingRecord.toJSON())
 `,
     },
     {
         id: "plain-records",
         title: "Plain records",
         description:
-            "Records without profiles: plain attributes, unidirectional and bidirectional references.",
+            "Records without profiles: plain simple types attributes, unidirectional and bidirectional references.",
         source: `// Records do not need profiles: plain attributes and references are
-// enough. This example shows the raw record API of the primitives package.
+// enough. This example shows the raw record API of the primitives package
+// with the attributes of @fdo-sdk/simple-types.
 import { ConcreteLocalFDORecord, LocalFDOGraph } from "@fdo-sdk/primitives"
+import { SIMPLE_ATTRIBUTES } from "@fdo-sdk/simple-types"
 import { PlaygroundBackend } from "@fdo-sdk/playground"
 
-PlaygroundBackend.resetStore()
 const backend = new PlaygroundBackend()
-
-const titleAttr = { pid: "attr/title", readableName: "title" }
-const relatedAttr = { pid: "attr/related", readableName: "related" }
-const mentionsAttr = { pid: "attr/mentions", readableName: "mentions" }
-const mentionedInAttr = { pid: "attr/mentionedIn", readableName: "mentionedIn" }
 
 const graph = new LocalFDOGraph()
 
-const paper = new ConcreteLocalFDORecord("LOCAL/paper")
-paper.set(titleAttr, "FDOs in practice")
+const paper = new ConcreteLocalFDORecord("LOCAL/publication/fdos-in-practice")
+paper.set(SIMPLE_ATTRIBUTES.PUBLICATION_TITLE, "FDOs in practice")
 
-const dataset = new ConcreteLocalFDORecord("LOCAL/dataset")
-dataset.set(titleAttr, "Reproducibility dataset")
+const dataset = new ConcreteLocalFDORecord("LOCAL/data-object/reproducibility")
+dataset.set(
+    SIMPLE_ATTRIBUTES.DATA_OBJECT_LOCATION,
+    "https://example.org/data/reproducibility.nc",
+)
+dataset.set(SIMPLE_ATTRIBUTES.MIME_TYPE, "application/netcdf")
 
-const author = new ConcreteLocalFDORecord("LOCAL/author")
-author.set(titleAttr, "Jane Doe")
+const author = new ConcreteLocalFDORecord("LOCAL/person/jane-doe")
+author.set(SIMPLE_ATTRIBUTES.OWNER, "Helmholtz-Zentrum Hereon")
+author.set(SIMPLE_ATTRIBUTES.PUBLICATION_CREATOR, "Jane Doe")
 
-// Unidirectional reference: paper -> dataset ...
-paper.addReference(relatedAttr, dataset)
-// ... and a bidirectional one: build() writes the back-reference on the
-// dataset under the given attribute.
-paper.addReferenceBidi(mentionsAttr, mentionedInAttr, dataset)
+// Unidirectional reference: the paper links to its creator record under
+// the PUBLICATION_CREATOR attribute ...
+paper.addReference(SIMPLE_ATTRIBUTES.PUBLICATION_CREATOR, author)
+// ... and a bidirectional one under the DOI attribute: the paper links to
+// the dataset it describes, and build() writes the back-reference on the
+// dataset so it links back to the paper.
+paper.addReferenceBidi(
+    SIMPLE_ATTRIBUTES.DOI,
+    SIMPLE_ATTRIBUTES.DOI,
+    dataset,
+)
 
 for (const record of [paper, dataset, author]) graph.addRecord(record)
-graph.build()
 
-const published = await backend.publishGraph(graph)
-console.log("Published paper:", paper.toJSON())
+await backend.publishGraph(graph)
 `,
     },
 ]

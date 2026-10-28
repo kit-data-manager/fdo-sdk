@@ -54,6 +54,7 @@ function makeProject(): FdoTsProject {
         {
             ...collectSources("primitives"),
             ...collectSources("mapping"),
+            ...collectSources("simple-types"),
             "/node_modules/@fdo-sdk/playground/src/runner/playground-backend.ts":
                 readFileSync(
                     join(here, "../src/runner/playground-backend.ts"),
@@ -121,6 +122,19 @@ describe("createProject completions", () => {
 
         expect(names).toContain("resetStore")
         expect(names).toContain("onStoreChange")
+    })
+
+    it("completes the simple types package", () => {
+        const project = makeProject()
+        const names = completeNames(
+            project,
+            'import { SIMPLE_PROFILES } from "@fdo-sdk/simple-types"\nSIMPLE_PROFILES.',
+        )
+
+        expect(names).toContain("CORE")
+        expect(names).toContain("DATA_OBJECT")
+        expect(names).toContain("SOFTWARE")
+        expect(names).toContain("PUBLICATION")
     })
 
     it("completes the published result of a publish call", () => {

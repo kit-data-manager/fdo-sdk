@@ -11,19 +11,22 @@ export type DataObjectProfileAttributes = {
     dataObjectLocation: string
     dataObjectLicense: string
     mimeType: string
+    isPartOf?: string | string[]
+    createdWithSoftware?: string | string[]
 }
 
 export type SoftwareProfileAttributes = {
     softwareRepositoryType: string
     softwareLocation: string
     softwareLicense: string
-    readmeLocation: string
+    readmeLocation?: string
 }
 
 export type PublicationProfileAttributes = {
     doi: string
     publicationTitle: string
     publicationCreator: string | string[]
+    hasPart?: string | string[]
 }
 
 const coreProfileDefinition: ProfileDefinition<CoreProfileAttributes> = {
@@ -45,6 +48,8 @@ const dataObjectProfileDefinition: ProfileDefinition<DataObjectProfileAttributes
             dataObjectLocation: FDO_TYPES.DATA_OBJECT_LOCATION,
             dataObjectLicense: FDO_TYPES.DATA_OBJECT_LICENSE,
             mimeType: FDO_TYPES.MIME_TYPE,
+            createdWithSoftware: FDO_TYPES.CREATED_WITH_SOFTWARE,
+            isPartOf: FDO_TYPES.IS_PART_OF,
         },
     }
 
@@ -70,6 +75,7 @@ const publicationProfileDefinition: ProfileDefinition<PublicationProfileAttribut
             doi: FDO_TYPES.DOI,
             publicationTitle: FDO_TYPES.PUBLICATION_TITLE,
             publicationCreator: FDO_TYPES.PUBLICATION_CREATOR,
+            hasPart: FDO_TYPES.HAS_PART,
         },
     }
 

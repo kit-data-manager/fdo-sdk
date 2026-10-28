@@ -1,5 +1,6 @@
 import * as primitives from "@fdo-sdk/primitives"
 import * as mapping from "@fdo-sdk/mapping"
+import * as simpleTypes from "@fdo-sdk/simple-types"
 import { TransformError, transformSource } from "./transform.js"
 import { snapshotRecords, type GraphSnapshot } from "./snapshot.js"
 import { PlaygroundBackend, type StoreEvent } from "./playground-backend.js"
@@ -103,6 +104,7 @@ export async function runScript(
         const execute = new Function(
             "__fdo_primitives",
             "__fdo_mapping",
+            "__fdo_simple_types",
             "__fdo_playground",
             "console",
             `"use strict";
@@ -112,6 +114,7 @@ ${transform.code}
         ) as (
             p: typeof primitives,
             m: typeof mapping,
+            s: typeof simpleTypes,
             g: { PlaygroundBackend: typeof PlaygroundBackend },
             c: CapturedConsole,
         ) => Promise<void>
@@ -119,6 +122,7 @@ ${transform.code}
         await execute(
             primitives,
             mapping,
+            simpleTypes,
             { PlaygroundBackend },
             capturedConsole,
         )

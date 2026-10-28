@@ -157,6 +157,28 @@ describe("runScript", () => {
         expect(streamed).toEqual(outcome.console)
     })
 
+    it("exposes @fdo-sdk/simple-types to user scripts", async () => {
+        const outcome = await runScript(
+            [
+                'import { ConcreteLocalFDORecord } from "@fdo-sdk/primitives"',
+                'import { SIMPLE_ATTRIBUTES, SIMPLE_PROFILES } from "@fdo-sdk/simple-types"',
+                'const record = new ConcreteLocalFDORecord("LOCAL/one")',
+                "record.addProfile(SIMPLE_PROFILES.DATA_OBJECT, {",
+                '    dataObjectLocation: "https://example.org/data/one.nc",',
+                '    dataObjectLicense: "CC-BY-4.0",',
+                '    mimeType: "application/netcdf",',
+                "})",
+                "console.log(record.get(SIMPLE_ATTRIBUTES.MIME_TYPE))",
+            ].join("\n"),
+        )
+
+        expect(outcome.error).toBeNull()
+        expect(outcome.console).toContainEqual({
+            level: "log",
+            text: "application/netcdf",
+        })
+    })
+
     it("logs store events and streams published graph snapshots", async () => {
         PlaygroundBackend.resetStore()
         const snapshots: GraphSnapshot[] = []

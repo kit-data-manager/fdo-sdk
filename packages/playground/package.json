@@ -16,6 +16,7 @@
         "@codemirror/lint": "^6.8.5",
         "@fdo-sdk/mapping": "workspace:*",
         "@fdo-sdk/primitives": "workspace:*",
+        "@fdo-sdk/simple-types": "workspace:*",
         "@uiw/react-codemirror": "^4.25.4",
         "es-module-lexer": "^1.7.0",
         "react": "^19.2.0",

@@ -54,6 +54,7 @@ export type FdoTsProject = {
 const SDK_MODULES: Record<string, string> = {
     "@fdo-sdk/primitives": "/node_modules/@fdo-sdk/primitives/src/index.ts",
     "@fdo-sdk/mapping": "/node_modules/@fdo-sdk/mapping/src/index.ts",
+    "@fdo-sdk/simple-types": "/node_modules/@fdo-sdk/simple-types/src/index.ts",
     "@fdo-sdk/playground":
         "/node_modules/@fdo-sdk/playground/src/runner/playground-backend.ts",
 }

@@ -17,6 +17,7 @@ export type TransformResult = {
 const SDK_GLOBALS: Record<string, string> = {
     "@fdo-sdk/primitives": "__fdo_primitives",
     "@fdo-sdk/mapping": "__fdo_mapping",
+    "@fdo-sdk/simple-types": "__fdo_simple_types",
     "@fdo-sdk/playground": "__fdo_playground",
 }
 
@@ -59,7 +60,7 @@ export async function transformSource(
         if (entry.d === -2) continue
         if (entry.d !== -1 || entry.n === undefined) {
             throw new TransformError(
-                "Dynamic import() is not supported in the playground. Use static imports from @fdo-sdk/primitives, @fdo-sdk/mapping and @fdo-sdk/playground.",
+                "Dynamic import() is not supported in the playground. Use static imports from @fdo-sdk/primitives, @fdo-sdk/mapping, @fdo-sdk/simple-types and @fdo-sdk/playground.",
             )
         }
 
@@ -67,7 +68,7 @@ export async function transformSource(
         const global = SDK_GLOBALS[specifier]
         if (!global) {
             throw new TransformError(
-                `Importing "${specifier}" is not supported — the playground only allows "@fdo-sdk/primitives", "@fdo-sdk/mapping" and "@fdo-sdk/playground".`,
+                `Importing "${specifier}" is not supported — the playground only allows "@fdo-sdk/primitives", "@fdo-sdk/mapping", "@fdo-sdk/simple-types" and "@fdo-sdk/playground".`,
             )
         }
 

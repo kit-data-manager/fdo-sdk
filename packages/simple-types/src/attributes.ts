@@ -18,6 +18,9 @@ export const SIMPLE_ATTRIBUTES: {
     readonly VERSION: Attribute<string>
     readonly PUBLICATION_DATE: Attribute<string>
     readonly CREATION_DATE: Attribute<string>
+    readonly IS_PART_OF: Attribute<string | string[]>
+    readonly HAS_PART: Attribute<string>
+    readonly CREATED_WITH_SOFTWARE: Attribute<string | string[]>
 } = {
     OWNER: { pid: FDO_TYPES.OWNER, readableName: "Owner" },
     HELMHOLTZ_RESEARCH_FIELD: {
@@ -67,5 +70,17 @@ export const SIMPLE_ATTRIBUTES: {
     CREATION_DATE: {
         pid: LEGACY_TYPE_KEYS.CREATION_DATE,
         readableName: "Creation Date",
+    },
+    IS_PART_OF: {
+        pid: FDO_TYPES.IS_PART_OF,
+        readableName: "Is Part Of",
+    },
+    HAS_PART: {
+        pid: FDO_TYPES.HAS_PART,
+        readableName: "Has Part",
+    },
+    CREATED_WITH_SOFTWARE: {
+        pid: FDO_TYPES.CREATED_WITH_SOFTWARE,
+        readableName: "Created with Software",
     },
 }

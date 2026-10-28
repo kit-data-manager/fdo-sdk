@@ -15,8 +15,14 @@ const mapping = import.meta.glob("../../../../mapping/src/**/*.ts", {
     eager: true,
 }) as Record<string, string>
 
+const simpleTypes = import.meta.glob("../../../../simple-types/src/**/*.ts", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+}) as Record<string, string>
+
 function virtualize(key: string): string {
-    const match = key.match(/(primitives|mapping)\/src\/(.*)$/)
+    const match = key.match(/(primitives|mapping|simple-types)\/src\/(.*)$/)
     if (match === null) throw new Error(`Unexpected SDK source path: ${key}`)
     return `/node_modules/@fdo-sdk/${match[1]}/src/${match[2]}`
 }
@@ -26,6 +32,9 @@ for (const [key, content] of Object.entries(primitives)) {
     sdkFiles[virtualize(key)] = content
 }
 for (const [key, content] of Object.entries(mapping)) {
+    sdkFiles[virtualize(key)] = content
+}
+for (const [key, content] of Object.entries(simpleTypes)) {
     sdkFiles[virtualize(key)] = content
 }
 sdkFiles["/node_modules/@fdo-sdk/playground/src/runner/playground-backend.ts"] =
