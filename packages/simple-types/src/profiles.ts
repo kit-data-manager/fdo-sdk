@@ -3,20 +3,17 @@ import type { Profile, ProfileDefinition } from "@fdo-sdk/primitives"
 import { FDO_PROFILES, FDO_TYPES } from "./identifiers.js"
 
 export type CoreProfileAttributes = {
-    profile: string
     owner: string
     helmholtzResearchField: string
 }
 
 export type DataObjectProfileAttributes = {
-    profile: string
     dataObjectLocation: string
     dataObjectLicense: string
     mimeType: string
 }
 
 export type SoftwareProfileAttributes = {
-    profile: string
     softwareRepositoryType: string
     softwareLocation: string
     softwareLicense: string
@@ -24,7 +21,6 @@ export type SoftwareProfileAttributes = {
 }
 
 export type PublicationProfileAttributes = {
-    profile: string
     doi: string
     publicationTitle: string
     publicationCreator: string | string[]
@@ -33,8 +29,8 @@ export type PublicationProfileAttributes = {
 const coreProfileDefinition: ProfileDefinition<CoreProfileAttributes> = {
     pid: FDO_PROFILES.CORE,
     readableName: "Simple Core Profile",
+    profileAttributePID: FDO_TYPES.PROFILE,
     mapping: {
-        profile: FDO_TYPES.PROFILE,
         owner: FDO_TYPES.OWNER,
         helmholtzResearchField: FDO_TYPES.HELMHOLTZ_RESEARCH_FIELD,
     },
@@ -44,8 +40,8 @@ const dataObjectProfileDefinition: ProfileDefinition<DataObjectProfileAttributes
     {
         pid: FDO_PROFILES.DATA_OBJECT,
         readableName: "Simple Data Object Profile",
+        profileAttributePID: FDO_TYPES.PROFILE,
         mapping: {
-            profile: FDO_TYPES.PROFILE,
             dataObjectLocation: FDO_TYPES.DATA_OBJECT_LOCATION,
             dataObjectLicense: FDO_TYPES.DATA_OBJECT_LICENSE,
             mimeType: FDO_TYPES.MIME_TYPE,
@@ -56,8 +52,8 @@ const softwareProfileDefinition: ProfileDefinition<SoftwareProfileAttributes> =
     {
         pid: FDO_PROFILES.SOFTWARE,
         readableName: "Simple Software Profile",
+        profileAttributePID: FDO_TYPES.PROFILE,
         mapping: {
-            profile: FDO_TYPES.PROFILE,
             softwareRepositoryType: FDO_TYPES.SOFTWARE_REPOSITORY_TYPE,
             softwareLocation: FDO_TYPES.SOFTWARE_LOCATION,
             softwareLicense: FDO_TYPES.SOFTWARE_LICENSE,
@@ -69,8 +65,8 @@ const publicationProfileDefinition: ProfileDefinition<PublicationProfileAttribut
     {
         pid: FDO_PROFILES.PUBLICATION,
         readableName: "Simple Publication Profile",
+        profileAttributePID: FDO_TYPES.PROFILE,
         mapping: {
-            profile: FDO_TYPES.PROFILE,
             doi: FDO_TYPES.DOI,
             publicationTitle: FDO_TYPES.PUBLICATION_TITLE,
             publicationCreator: FDO_TYPES.PUBLICATION_CREATOR,

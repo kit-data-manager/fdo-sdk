@@ -63,6 +63,27 @@ export class ConcreteFDORecord implements FDORecord {
         attributes: P extends Profile<infer I> ? WithMarkers<I> : never,
     ): void {
         this.conformsToProfiles.push(profile.def.pid)
+
+        // If the profile defines a profileAttributePID, we mark this profile as active in that profile marker attribute
+        if (profile.def.profileAttributePID) {
+            const existingProfileMarker = this.get(
+                profile.def.profileAttributePID,
+            )
+
+            // If the profile marker attribute doesn't exist yet or doesn't contain this specific profile yet, we add it
+            if (
+                !existingProfileMarker ||
+                !toArray(existingProfileMarker).some(
+                    (profilePID) => profilePID === profile.def.pid,
+                )
+            ) {
+                this.addAttribute(
+                    profile.def.profileAttributePID,
+                    profile.def.pid,
+                )
+            }
+        }
+
         const mapped = new Map<PID, RecordValue>()
         for (const [attributeName, value] of Object.entries(attributes)) {
             const attributePID = profile.mapAttributeNameToPID(attributeName)

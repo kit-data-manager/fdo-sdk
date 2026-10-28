@@ -44,16 +44,15 @@ describe("SIMPLE_PROFILES", () => {
         expect(() => profile.mapAttributeNameToPID("unknown")).toThrow()
     })
 
-    it("includes the PROFILE attribute in every profile", () => {
+    it("includes the PROFILE attribute in every profile (as profileAttributePID)", () => {
         for (const profile of Object.values(SIMPLE_PROFILES)) {
-            expect(profile.def.mapping.profile).toBe(FDO_TYPES.PROFILE)
+            expect(profile.def.profileAttributePID).toBe(FDO_TYPES.PROFILE)
         }
     })
 
     it("can be applied to FDO records", () => {
         const record = new ConcreteFDORecord()
         record.addProfile(SIMPLE_PROFILES.SOFTWARE, {
-            profile: FDO_PROFILES.SOFTWARE,
             softwareRepositoryType: "GitHub",
             softwareLocation: "https://github.com/example/example",
             softwareLicense: "MIT",

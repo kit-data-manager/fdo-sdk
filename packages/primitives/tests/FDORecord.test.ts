@@ -27,6 +27,11 @@ const def: ProfileDefinition<HMCProfileAttributes> = {
     },
 }
 
+const defWithAttributeMarker: ProfileDefinition<HMCProfileAttributes> = {
+    ...def,
+    profileAttributePID: "some/profile",
+}
+
 const testAttr: Attribute<string | string[]> = {
     pid: "TEST/testAttr",
     readableName: "testAttr",
@@ -411,6 +416,93 @@ describe("FDORecord (via ConcreteMappedFDORecord)", () => {
             ).toThrow(
                 "Profile instance contains illegal value of type object. This might be an internal error.",
             )
+        })
+
+        it("adds the profile marker attribute when it doesn't exist", () => {
+            const r: FDORecord = new ConcreteLocalFDORecord("LOCAL/1")
+            const profile = new ConcreteProfile(defWithAttributeMarker)
+
+            expect(r.get("some/profile")).toBeUndefined()
+            r.addProfile(profile, {
+                authors: ["me", "you"],
+                datasetName: "test",
+                dateCreated: "today",
+            })
+            expect(r.get("some/profile")).toBe("profile/pid")
+        })
+
+        it("adds the profile to the marker attribute", () => {
+            const r: FDORecord = new ConcreteLocalFDORecord("LOCAL/1")
+            const profile = new ConcreteProfile(defWithAttributeMarker)
+            const secondDefWithAttributeMarker: ProfileDefinition<HMCProfileAttributes> =
+                {
+                    ...defWithAttributeMarker,
+                    pid: "profile/pid2",
+                }
+            const secondProfile = new ConcreteProfile(
+                secondDefWithAttributeMarker,
+            )
+
+            expect(r.get("some/profile")).toBeUndefined()
+            r.addProfile(profile, {
+                authors: ["me", "you"],
+                datasetName: "test",
+                dateCreated: "today",
+            })
+            expect(r.get("some/profile")).toBe("profile/pid")
+            r.addProfile(secondProfile, {
+                authors: ["ada", "grace"],
+                datasetName: "another test",
+                dateCreated: "tomorrow",
+            })
+            expect(r.get("some/profile")).toEqual([
+                "profile/pid",
+                "profile/pid2",
+            ])
+        })
+
+        it("adds each profile only once to the marker attribute", () => {
+            const r: FDORecord = new ConcreteLocalFDORecord("LOCAL/1")
+            const profile = new ConcreteProfile(defWithAttributeMarker)
+            const secondDefWithAttributeMarker: ProfileDefinition<HMCProfileAttributes> =
+                {
+                    ...defWithAttributeMarker,
+                    pid: "profile/pid2",
+                }
+            const secondProfile = new ConcreteProfile(
+                secondDefWithAttributeMarker,
+            )
+
+            expect(r.get("some/profile")).toBeUndefined()
+            r.addProfile(profile, {
+                authors: ["me", "you"],
+                datasetName: "test",
+                dateCreated: "today",
+            })
+            r.addProfile(profile, {
+                authors: ["me", "you"],
+                datasetName: "test",
+                dateCreated: "today",
+            })
+            expect(r.get("some/profile")).toBe("profile/pid")
+            r.addProfile(secondProfile, {
+                authors: ["ada", "grace"],
+                datasetName: "another test",
+                dateCreated: "tomorrow",
+            })
+            expect(r.get("some/profile")).toEqual([
+                "profile/pid",
+                "profile/pid2",
+            ])
+            r.addProfile(profile, {
+                authors: ["me", "you"],
+                datasetName: "test",
+                dateCreated: "today",
+            })
+            expect(r.get("some/profile")).toEqual([
+                "profile/pid",
+                "profile/pid2",
+            ])
         })
     })
 
