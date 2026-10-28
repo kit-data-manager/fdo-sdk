@@ -1,0 +1,29 @@
+{
+    "name": "@fdo-sdk/simple-types",
+    "version": "0.1.0",
+    "description": "",
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "build": "tsc --noEmit && tsdown"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "module",
+    "types": "./dist/index.d.mts",
+    "devDependencies": {
+        "@types/node": "^26.2.0",
+        "@vitest/coverage-v8": "4.1.10",
+        "tsdown": "^0.22.14",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.10"
+    },
+    "dependencies": {
+        "@fdo-sdk/primitives": "workspace:*"
+    },
+    "exports": {
+        ".": "./dist/index.mjs",
+        "./package.json": "./package.json"
+    }
+}

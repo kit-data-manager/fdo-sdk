@@ -26,6 +26,7 @@
     "devDependencies": {
         "@fdo-sdk/mapping": "workspace:*",
         "@fdo-sdk/primitives": "workspace:*",
+        "@fdo-sdk/simple-types": "workspace:*",
         "serve": "^14.2.6",
         "typedoc": "^0.28.20",
         "typedoc-plugin-markdown": "^4.14.1"

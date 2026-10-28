@@ -9,6 +9,18 @@ import type {
 import type { Profile } from "./Profile.js"
 import type { Attribute } from "./Attribute.js"
 
+/**
+ * Either a {@link LocalFDORecord} or a {@link PublishedFDORecord}
+ */
+export type IdentifiableFDORecord = LocalFDORecord | PublishedFDORecord
+
+/**
+ * Represents a single FDO record that has a {@link LocalID} and is optionally associated with a registered {@link PID}.
+ * Useful for creating mappings from data to metadata where records can be associated consistently through their {@link LocalID}.
+ *
+ * A record consists of attributes, each with one or more values. Each attribute
+ * is uniquely identified by its {@link PID}.
+ */
 export interface LocalFDORecord extends FDORecord {
     /**
      * The locally unique identifier of this record
@@ -16,6 +28,12 @@ export interface LocalFDORecord extends FDORecord {
     readonly localID: LocalID
 }
 
+/**
+ * Represents a single FDO record that has a registered {@link PID}
+ *
+ * A record consists of attributes, each with one or more values. Each attribute
+ * is uniquely identified by its {@link PID}.
+ */
 export interface PublishedFDORecord extends FDORecord {
     /**
      * The globally unique and registered identifier of this record.
@@ -27,8 +45,7 @@ export interface PublishedLocalFDORecord
     extends Omit<LocalFDORecord, "PID">, PublishedFDORecord {}
 
 /**
- * Represents a single FDO record that is associated with a local identifier and
- * optionally with a registered {@link PID}.
+ * Represents a single FDO record that is optionally associated with a registered {@link PID}.
  *
  * A record consists of attributes, each with one or more values. Each attribute
  * is uniquely identified by its {@link PID}.
@@ -99,13 +116,13 @@ export interface FDORecord extends ReadOnlyFDORecord {
      * Add a unidirectional reference from this record to another record. The target record must either
      * be known locally or be resolvable via its PID
      * @param fromAttribute The attribute of this record where the reference will be placed
-     * @param toRecord local ID ({@link LocalID}) or {@link PID} of the referenced record. Must either
+     * @param toRecord the record that should be referenced, or a local ID ({@link LocalID}) or {@link PID} of the referenced record. Must either
      * be known locally or be resolvable via its PID
      * @see {@link FDORecord.addReferenceBidi} for bidirectional references
      */
     addReference(
         fromAttribute: PID | Attribute<PID | PID[]>,
-        toRecord: PID | LocalID | FDORecord,
+        toRecord: PID | LocalID | IdentifiableFDORecord,
     ): void
 
     /**
@@ -114,20 +131,19 @@ export interface FDORecord extends ReadOnlyFDORecord {
      * create the back-reference
      * @param fromAttribute The attribute of this record where the reference will be placed
      * @param toAttribute The attribute of the target record where the back-reference will be placed
-     * @param toRecord local ID ({@link LocalID}) or {@link PID} of the referenced record. Must either
+     * @param toRecord the record that should be referenced, or a local ID ({@link LocalID}) or {@link PID} of the referenced record. Must either
      * be known locally or be resolvable via its PID
      * @see {@link FDORecord.addReference} for unidirectional references
      */
     addReferenceBidi(
         fromAttribute: PID | Attribute<PID | PID[]>,
         toAttribute: PID | Attribute<PID | PID[]>,
-        toRecord: PID | LocalID | FDORecord,
+        toRecord: PID | LocalID | IdentifiableFDORecord,
     ): void
 }
 
 /**
- * Represents a single FDO record that is associated with a local identifier and
- * optionally with a registered {@link PID}. Read-only.
+ * Represents a single FDO record that is optionally associated with a registered {@link PID}. Read-only.
  *
  * A record consists of attributes, each with one or more values. Each attribute
  * is uniquely identified by its {@link PID}.

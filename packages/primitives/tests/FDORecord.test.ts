@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest"
 import {
     type FDORecord,
     keep,
+    type LocalFDORecord,
     reference,
     referenceBidi,
     skip,
@@ -214,17 +215,17 @@ describe("FDORecord (via ConcreteMappedFDORecord)", () => {
         })
 
         it("uses the record's PID as target when given a record with a PID", () => {
-            const target: FDORecord = new ConcreteLocalFDORecord(
+            const target: LocalFDORecord = new ConcreteLocalFDORecord(
                 "LOCAL/2",
                 "target/pid",
             )
-            const r: FDORecord = new ConcreteLocalFDORecord("LOCAL/1")
+            const r: LocalFDORecord = new ConcreteLocalFDORecord("LOCAL/1")
             r.addReference(fromAttr, target)
             expect(r.get(fromAttr)).toBe("target/pid")
         })
 
         it("falls back to localID when the target record has no PID", () => {
-            const target: FDORecord = new ConcreteLocalFDORecord("LOCAL/2")
+            const target: LocalFDORecord = new ConcreteLocalFDORecord("LOCAL/2")
             const r: FDORecord = new ConcreteLocalFDORecord("LOCAL/1")
             r.addReference(fromAttr, target)
             expect(r.get(fromAttr)).toBe("LOCAL/2")
@@ -252,7 +253,7 @@ describe("FDORecord (via ConcreteMappedFDORecord)", () => {
         })
 
         it("uses the record's PID as target when given a record with a PID", () => {
-            const target: FDORecord = new ConcreteLocalFDORecord(
+            const target: LocalFDORecord = new ConcreteLocalFDORecord(
                 "LOCAL/2",
                 "target/pid",
             )
@@ -262,7 +263,7 @@ describe("FDORecord (via ConcreteMappedFDORecord)", () => {
         })
 
         it("falls back to localID when the target record has no PID", () => {
-            const target: FDORecord = new ConcreteLocalFDORecord("LOCAL/2")
+            const target: LocalFDORecord = new ConcreteLocalFDORecord("LOCAL/2")
             const r: FDORecord = new ConcreteLocalFDORecord("LOCAL/1")
             r.addReferenceBidi(fromAttr, toAttr, target)
             expect(r.get(fromAttr)).toBe("LOCAL/2")

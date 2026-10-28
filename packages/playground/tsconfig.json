@@ -2,6 +2,7 @@
     "compilerOptions": {
         "module": "esnext",
         "moduleResolution": "bundler",
+        "esModuleInterop": true,
         "target": "esnext",
         "lib": ["esnext", "dom", "dom.iterable"],
         "jsx": "react-jsx",

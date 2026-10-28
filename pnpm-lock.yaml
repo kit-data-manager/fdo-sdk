@@ -225,6 +225,9 @@ importers:
       '@fdo-sdk/primitives':
         specifier: workspace:*
         version: link:../primitives
+      '@fdo-sdk/simple-types':
+        specifier: workspace:*
+        version: link:../simple-types
       serve:
         specifier: ^14.2.6
         version: 14.2.6(supports-color@7.2.0)
@@ -253,13 +256,13 @@ importers:
 
   packages/mapping:
     dependencies:
+      '@fdo-sdk/primitives':
+        specifier: workspace:*
+        version: link:../primitives
       openapi-fetch:
         specifier: ^0.17.0
         version: 0.17.0
     devDependencies:
-      '@fdo-sdk/primitives':
-        specifier: workspace:*
-        version: link:../primitives
       '@types/node':
         specifier: ^26.2.0
         version: 26.2.0
@@ -287,6 +290,9 @@ importers:
       '@codemirror/lang-javascript':
         specifier: ^6.2.4
         version: 6.2.5
+      '@codemirror/lint':
+        specifier: ^6.8.5
+        version: 6.9.7
       '@fdo-sdk/mapping':
         specifier: workspace:*
         version: link:../mapping
@@ -305,6 +311,9 @@ importers:
       react-dom:
         specifier: ^19.2.0
         version: 19.3.1(react@19.3.1)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
     devDependencies:
       '@types/react':
         specifier: ^19.2.0
@@ -318,9 +327,6 @@ importers:
       '@vitest/coverage-v8':
         specifier: 4.1.10
         version: 4.1.10(vitest@4.1.10)
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
       vite:
         specifier: ^7.1.11
         version: 7.3.7(@types/node@26.2.0)(lightningcss@1.33.0)(yaml@2.9.0)
@@ -329,6 +335,28 @@ importers:
         version: 4.1.10(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(vite@7.3.7(@types/node@26.2.0)(lightningcss@1.33.0)(yaml@2.9.0))
 
   packages/primitives:
+    devDependencies:
+      '@types/node':
+        specifier: ^26.2.0
+        version: 26.2.0
+      '@vitest/coverage-v8':
+        specifier: 4.1.10
+        version: 4.1.10(vitest@4.1.10)
+      tsdown:
+        specifier: ^0.22.14
+        version: 0.22.14(typescript@6.0.3)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
+
+  packages/simple-types:
+    dependencies:
+      '@fdo-sdk/primitives':
+        specifier: workspace:*
+        version: link:../primitives
     devDependencies:
       '@types/node':
         specifier: ^26.2.0

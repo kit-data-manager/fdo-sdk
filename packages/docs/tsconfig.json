@@ -3,12 +3,14 @@
     "compilerOptions": {
         "paths": {
             "@fdo-sdk/primitives": ["../primitives/src/index.ts"],
-            "@fdo-sdk/mapping": ["../mapping/src/index.ts"]
+            "@fdo-sdk/mapping": ["../mapping/src/index.ts"],
+            "@fdo-sdk/simple-types": ["../simple-types/src/index.ts"]
         }
     },
     "include": [
         "../primitives/src/**/*.ts",
         "../mapping/src/**/*.ts",
+        "../simple-types/src/**/*.ts",
         "src/**/*.ts"
     ]
 }

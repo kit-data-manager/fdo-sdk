@@ -7,6 +7,7 @@ pnpm monorepo (`packages/*`) orchestrated by Lerna 10 (Nx task runner). Four pac
 | package                     | name                | depends on                 |
 | --------------------------- | ------------------- | -------------------------- |
 | `packages/primitives`       | `@fdo-sdk/primitives` | —                        |
+| `packages/simple-types`     | `@fdo-sdk/simple-types` | `primitives`           |
 | `packages/mapping`          | `@fdo-sdk/mapping`    | `primitives`             |
 | `packages/examples`         | `@fdo-sdk/examples`   | `primitives`, `mapping`  |
 | `packages/docs`             | `@fdo-sdk/docs`       | `primitives`, `mapping`  |
@@ -14,7 +15,7 @@ pnpm monorepo (`packages/*`) orchestrated by Lerna 10 (Nx task runner). Four pac
 Run workspace commands from the repo root:
 
 - `pnpm build` — `lerna run build` for every package, executed in dependency order (dependencies are built first). `pnpm build:stream` prints interleaved output instead of buffered per-package output.
-- `pnpm test` — `lerna run test`; only packages that define a `test` script run (`primitives`, `mapping`). Inside a package, `pnpm test` is still vitest (coverage via v8 is enabled by default). Use `pnpm test -- ...` / edit `tests/**/*.test.ts` for focused runs; `pnpm test:watch` for watch mode.
+- `pnpm test` — `lerna run test`; only packages that define a `test` script run (`primitives`, `mapping`, `simple-types`). Inside a package, `pnpm test` is still vitest (coverage via v8 is enabled by default). Use `pnpm test -- ...` / edit `tests/**/*.test.ts` for focused runs; `pnpm test:watch` for watch mode.
 - `pnpm exec lerna ls --toposort` — print the resolved package order.
 - `pnpm exec lerna run <script> --scope <pkg>` — run one script in one package.
 

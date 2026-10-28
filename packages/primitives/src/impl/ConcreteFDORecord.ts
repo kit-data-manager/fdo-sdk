@@ -1,7 +1,7 @@
 import type {
     Attribute,
     FDORecord,
-    LocalFDORecord,
+    IdentifiableFDORecord,
     PublishedFDORecord,
 } from "../interfaces/index.js"
 import {
@@ -132,7 +132,7 @@ export class ConcreteFDORecord implements FDORecord {
 
     addReference(
         fromAttribute: PID | Attribute<PID | PID[]>,
-        toRecord: PID | LocalID | LocalFDORecord | PublishedFDORecord,
+        toRecord: PID | LocalID | IdentifiableFDORecord,
     ): void {
         const target =
             typeof toRecord === "object"
@@ -156,11 +156,12 @@ export class ConcreteFDORecord implements FDORecord {
     addReferenceBidi(
         fromAttribute: PID | Attribute<PID | PID[]>,
         inverseAttribute: PID | Attribute<PID | PID[]>,
-        toRecord: PID | LocalID | LocalFDORecord,
+        toRecord: PID | LocalID | IdentifiableFDORecord,
     ): void {
         const target =
             typeof toRecord === "object"
-                ? (toRecord.PID ?? toRecord.localID)
+                ? (toRecord.PID ??
+                  ("localID" in toRecord ? toRecord.localID : undefined))
                 : toRecord
 
         if (target === undefined)

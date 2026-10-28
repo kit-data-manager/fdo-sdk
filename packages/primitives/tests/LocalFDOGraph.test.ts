@@ -136,8 +136,14 @@ describe("LocalFDOGraph", () => {
     describe("build", () => {
         it("adds a back-reference via the toAttribute on the target record", () => {
             const graph: FDOGraph<LocalFDORecord> = new LocalFDOGraph()
-            const a: FDORecord = new ConcreteLocalFDORecord("LOCAL/1", "rec/a")
-            const b: FDORecord = new ConcreteLocalFDORecord("LOCAL/2", "rec/b")
+            const a: LocalFDORecord = new ConcreteLocalFDORecord(
+                "LOCAL/1",
+                "rec/a",
+            )
+            const b: LocalFDORecord = new ConcreteLocalFDORecord(
+                "LOCAL/2",
+                "rec/b",
+            )
             graph.addRecord(a)
             graph.addRecord(b)
 
@@ -150,8 +156,11 @@ describe("LocalFDOGraph", () => {
 
         it("uses the source record's localID as back-reference when it has no PID", () => {
             const graph: FDOGraph<LocalFDORecord> = new LocalFDOGraph()
-            const a: FDORecord = new ConcreteLocalFDORecord("LOCAL/1")
-            const b: FDORecord = new ConcreteLocalFDORecord("LOCAL/2", "rec/b")
+            const a: LocalFDORecord = new ConcreteLocalFDORecord("LOCAL/1")
+            const b: LocalFDORecord = new ConcreteLocalFDORecord(
+                "LOCAL/2",
+                "rec/b",
+            )
             graph.addRecord(a)
             graph.addRecord(b)
 
@@ -164,8 +173,11 @@ describe("LocalFDOGraph", () => {
 
         it("resolves the target by localID", () => {
             const graph: FDOGraph<LocalFDORecord> = new LocalFDOGraph()
-            const a: FDORecord = new ConcreteLocalFDORecord("LOCAL/1", "rec/a")
-            const b: FDORecord = new ConcreteLocalFDORecord("LOCAL/2")
+            const a: LocalFDORecord = new ConcreteLocalFDORecord(
+                "LOCAL/1",
+                "rec/a",
+            )
+            const b: LocalFDORecord = new ConcreteLocalFDORecord("LOCAL/2")
             graph.addRecord(a)
             graph.addRecord(b)
 
@@ -178,8 +190,14 @@ describe("LocalFDOGraph", () => {
 
         it("leaves the forward reference in place on the source record", () => {
             const graph: FDOGraph<LocalFDORecord> = new LocalFDOGraph()
-            const a: FDORecord = new ConcreteLocalFDORecord("LOCAL/1", "rec/a")
-            const b: FDORecord = new ConcreteLocalFDORecord("LOCAL/2", "rec/b")
+            const a: LocalFDORecord = new ConcreteLocalFDORecord(
+                "LOCAL/1",
+                "rec/a",
+            )
+            const b: LocalFDORecord = new ConcreteLocalFDORecord(
+                "LOCAL/2",
+                "rec/b",
+            )
             graph.addRecord(a)
             graph.addRecord(b)
 
@@ -195,7 +213,10 @@ describe("LocalFDOGraph", () => {
             const graph: FDOGraph<LocalFDORecord> = new LocalFDOGraph()
             const a: FDORecord = new ConcreteLocalFDORecord("LOCAL/1", "rec/a")
             const c: FDORecord = new ConcreteLocalFDORecord("LOCAL/3", "rec/c")
-            const b: FDORecord = new ConcreteLocalFDORecord("LOCAL/2", "rec/b")
+            const b: LocalFDORecord = new ConcreteLocalFDORecord(
+                "LOCAL/2",
+                "rec/b",
+            )
             graph.addRecord(a)
             graph.addRecord(c)
             graph.addRecord(b)
@@ -212,7 +233,10 @@ describe("LocalFDOGraph", () => {
             const graph: FDOGraph<LocalFDORecord> = new LocalFDOGraph()
             const a: FDORecord = new ConcreteLocalFDORecord("LOCAL/1", "rec/a")
             const c: FDORecord = new ConcreteLocalFDORecord("LOCAL/3", "rec/c")
-            const b: FDORecord = new ConcreteLocalFDORecord("LOCAL/2", "rec/b")
+            const b: LocalFDORecord = new ConcreteLocalFDORecord(
+                "LOCAL/2",
+                "rec/b",
+            )
             graph.addRecord(a)
             graph.addRecord(c)
             graph.addRecord(b)

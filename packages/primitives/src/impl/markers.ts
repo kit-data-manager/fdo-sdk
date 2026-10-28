@@ -5,7 +5,8 @@ import type {
     ReferenceMarker,
     SkipMarker,
 } from "../types.js"
-import type { Attribute } from "../interfaces/index.js"
+import type { Attribute, IdentifiableFDORecord } from "../interfaces/index.js"
+import { getRecordIdentifier } from "../utils.js"
 
 /**
  * To be used in {@link FDORecord.addProfile}. Marks a mandatory attribute as skipped, meaning it won't be added to the record.
@@ -29,26 +30,31 @@ export function keep(): KeepMarker {
 
 /**
  * To be used in {@link FDORecord.addProfile}. Adds a reference from this record to another record.
- * @param targetRecord The {@link PID} or local identifier of the remote record
+ * @param targetRecord The referenced record, or the {@link PID} or local identifier of the referenced record
  */
-export function reference(targetRecord: LocalID | PID): ReferenceMarker {
+export function reference(
+    targetRecord: LocalID | PID | IdentifiableFDORecord,
+): ReferenceMarker {
     return {
         mark: "reference",
         ref: {
             direction: "uni",
-            toRecord: targetRecord,
+            toRecord:
+                typeof targetRecord === "object"
+                    ? getRecordIdentifier(targetRecord)
+                    : targetRecord,
         },
     }
 }
 
 /**
  * To be used in {@link FDORecord.addProfile}. Adds a reference from this record to another record and back.
- * @param inverseAttribute The {@link PID} or {@link Attribute} instance of the attribute on the remote record that will link bank to this record
- * @param targetRecord The {@link PID} or local identifier of the remote record
+ * @param inverseAttribute The {@link PID} or {@link Attribute} instance of the attribute on the referenced record that will link bank to this record
+ * @param targetRecord The referenced record, or the {@link PID} or local identifier of the referenced record
  */
 export function referenceBidi(
     inverseAttribute: PID | Attribute<never>,
-    targetRecord: LocalID | PID,
+    targetRecord: LocalID | PID | IdentifiableFDORecord,
 ): ReferenceMarker {
     return {
         mark: "reference",
@@ -58,7 +64,10 @@ export function referenceBidi(
                 typeof inverseAttribute === "string"
                     ? inverseAttribute
                     : inverseAttribute.pid,
-            toRecord: targetRecord,
+            toRecord:
+                typeof targetRecord === "object"
+                    ? getRecordIdentifier(targetRecord)
+                    : targetRecord,
         },
     }
 }
