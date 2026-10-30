@@ -27,7 +27,7 @@ import {
 import { SIMPLE_ATTRIBUTES, SIMPLE_PROFILES } from "@fdo-sdk/simple-types"
 import { PlaygroundBackend } from "@fdo-sdk/playground"
 
-const backend = new PlaygroundBackend()
+const backend = PlaygroundBackend.getInstance()
 const graph = new LocalFDOGraph()
 
 // A software repository with the simple software profile. Every value is
@@ -132,7 +132,7 @@ import { SIMPLE_PROFILES } from "@fdo-sdk/simple-types"
 import { ContinuousMappingContext } from "@fdo-sdk/mapping"
 import { PlaygroundBackend } from "@fdo-sdk/playground"
 
-const backend = new PlaygroundBackend()
+const backend = PlaygroundBackend.getInstance()
 const mappingPID = "TEST/mapping-climate-software"
 
 // The mapping is a pure function of the source data and the context, so it
@@ -177,8 +177,16 @@ const initialData = {
     dataObjects: [measurementsSource, analysisSource],
 }
 
-// Run 1: publish the initial mapping.
+// Run 1: publish the initial mapping. The remote graph is resolved into
+// the context first, so a mapping that was published in an earlier run is
+// updated instead of created again. On the very first run the mapping has
+// nothing published yet, so resolving fails and every record is created.
 const firstContext = new ContinuousMappingContext(mappingPID)
+try {
+    await firstContext.resolveRemoteGraph(backend)
+} catch {
+    // The mapping has not been published yet.
+}
 mapping(firstContext, initialData)
 const firstResult = firstContext.build()
 await backend.publishContinuous(firstResult)
@@ -204,7 +212,6 @@ const updateContext = new ContinuousMappingContext(mappingPID)
 await updateContext.resolveRemoteGraph(backend)
 mapping(updateContext, updatedData)
 const updateResult = updateContext.build()
-console.log("Deleted records:", updateResult.delete)
 await backend.publishContinuous(updateResult)
 `,
     },
@@ -220,7 +227,7 @@ import { ConcreteLocalFDORecord, LocalFDOGraph } from "@fdo-sdk/primitives"
 import { SIMPLE_ATTRIBUTES } from "@fdo-sdk/simple-types"
 import { PlaygroundBackend } from "@fdo-sdk/playground"
 
-const backend = new PlaygroundBackend()
+const backend = PlaygroundBackend.getInstance()
 
 const graph = new LocalFDOGraph()
 

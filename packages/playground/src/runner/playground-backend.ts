@@ -27,7 +27,9 @@ function localIDOf(record: FDORecord): LocalID | undefined {
 
 /**
  * The playground backend: the in-memory testing backend, instrumented for
- * the playground. All instances share the store of `LocalTestingBackend`.
+ * the playground. It is a singleton: {@link getInstance} always returns the
+ * same instance, backed by the shared store of `LocalTestingBackend` that
+ * persists between runs.
  *
  * It tracks every PID it published so the UI can always show the current
  * state of the whole store, and it emits store events ("created record ...",
@@ -35,8 +37,18 @@ function localIDOf(record: FDORecord): LocalID | undefined {
  * published, so the log can tell the story of a mapping run.
  */
 export class PlaygroundBackend extends LocalTestingBackend {
+    static #instance: PlaygroundBackend | undefined
     static #pids = new Set<PID>()
     static #listeners = new Set<Listener>()
+
+    static getInstance(): PlaygroundBackend {
+        PlaygroundBackend.#instance ??= new PlaygroundBackend()
+        return PlaygroundBackend.#instance
+    }
+
+    private constructor() {
+        super()
+    }
 
     static onStoreChange(listener: Listener): () => void {
         PlaygroundBackend.#listeners.add(listener)

@@ -144,7 +144,7 @@ describe("createProject completions", () => {
             [
                 'import { ConcreteLocalFDORecord } from "@fdo-sdk/primitives"',
                 'import { PlaygroundBackend } from "@fdo-sdk/playground"',
-                "const backend = new PlaygroundBackend()",
+                "const backend = PlaygroundBackend.getInstance()",
                 'const record = new ConcreteLocalFDORecord("LOCAL/1")',
                 "record.addProfile",
                 "const published = await backend.publishGraph(record)",
@@ -244,7 +244,7 @@ describe("createProject diagnostics", () => {
                 'import { PlaygroundBackend } from "@fdo-sdk/playground"',
                 "",
                 "PlaygroundBackend.resetStore()",
-                "const backend = new PlaygroundBackend()",
+                "const backend = PlaygroundBackend.getInstance()",
                 'const context = new ContinuousMappingContext("TEST/mapping")',
                 'const record = context.newRecord("LOCAL/1")',
                 'record.set("attr/name", "x")',

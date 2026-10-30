@@ -139,14 +139,21 @@ describe("LocalTestingBackend", () => {
 
         it("keeps the PID of a record that was published before under the same local ID", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteLocalFDORecord("LOCAL/1")
-            await publishAll(backend, record)
-            const firstPID = record.PID!
+            const context = new ContinuousMappingContext(mappingPID)
+            context.newRecord("LOCAL/1")
+            await backend.publishContinuous(context.build())
+            const firstPID = (
+                await backend.resolveMappingRecords(mappingPID)
+            ).getRecords()[0]!.PID
 
             // A second run of the same mapping creates a new record object for
-            // the same local ID. It must not receive a new PID.
-            const secondRun = new ConcreteLocalFDORecord("LOCAL/1")
-            await publishAll(backend, secondRun)
+            // the same local ID. The context resolves the remote graph and
+            // classifies the record as an update, carrying the PID of the
+            // first run, so publishing overwrites the existing record.
+            const secondContext = new ContinuousMappingContext(mappingPID)
+            await secondContext.resolveRemoteGraph(backend)
+            const secondRun = secondContext.newRecord("LOCAL/1")
+            await backend.publishContinuous(secondContext.build())
 
             expect(secondRun.PID).toBe(firstPID)
             expect(
@@ -227,22 +234,23 @@ describe("LocalTestingBackend", () => {
 
         it("publishes the records that are updated by the mapping", async () => {
             const backend = new LocalTestingBackend()
-            const record = new ConcreteLocalFDORecord("LOCAL/1")
+            const context = new ContinuousMappingContext(mappingPID)
+            const record = context.newRecord("LOCAL/1")
             record.set("attr/a", "v1")
-            await publishAll(backend, record)
+            await backend.publishContinuous(context.build())
             const firstPID = record.PID!
 
-            // The second run of the same mapping updates the record: it keeps
-            // the PID it was published with.
-            const secondRun = new ConcreteLocalFDORecord("LOCAL/1")
+            // The second run of the same mapping updates the record: the
+            // context stamps the PID of the first run onto it, so publishing
+            // overwrites the existing record.
+            const secondContext = new ContinuousMappingContext(mappingPID)
+            await secondContext.resolveRemoteGraph(backend)
+            const secondRun = secondContext.newRecord("LOCAL/1")
             secondRun.set("attr/a", "v2")
 
-            const result = await backend.publishContinuous({
-                mappingPID,
-                create: new LocalFDOGraph(),
-                update: newGraphWithRecords(secondRun),
-                delete: [],
-            })
+            const result = await backend.publishContinuous(
+                secondContext.build(),
+            )
 
             expect(secondRun.PID).toBe(firstPID)
             expect(result.graph.getRecord(firstPID)?.get("attr/a")).toBe("v2")
@@ -341,7 +349,7 @@ describe("LocalTestingBackend", () => {
             expect(published.getRecord(record.PID!)).toBeDefined()
         })
 
-        it("keeps the PID of a record that was published before", async () => {
+        it("assigns a new PID to a record that is published again", async () => {
             const backend = new LocalTestingBackend()
             const record = new ConcreteLocalFDORecord("LOCAL/a")
             await backend.publishGraph(newGraphWithRecords(record))
@@ -350,7 +358,7 @@ describe("LocalTestingBackend", () => {
             const secondRun = new ConcreteLocalFDORecord("LOCAL/a")
             await backend.publishGraph(newGraphWithRecords(secondRun))
 
-            expect(secondRun.PID).toBe(firstPID)
+            expect(secondRun.PID).not.toBe(firstPID)
         })
 
         it("does not reuse the PID of a record of a mapping", async () => {
@@ -415,7 +423,7 @@ describe("LocalTestingBackend", () => {
             expect(published.get("attr/localId")).toBeUndefined()
         })
 
-        it("keeps the PID of a record that was published before", async () => {
+        it("assigns a new PID to a record that is published again", async () => {
             const backend = new LocalTestingBackend()
             const record = new ConcreteLocalFDORecord("LOCAL/a")
             await backend.publishRecord(record)
@@ -424,7 +432,7 @@ describe("LocalTestingBackend", () => {
             const secondRun = new ConcreteLocalFDORecord("LOCAL/a")
             await backend.publishRecord(secondRun)
 
-            expect(secondRun.PID).toBe(firstPID)
+            expect(secondRun.PID).not.toBe(firstPID)
         })
 
         it("keeps the back-reference to the mapping of the record", async () => {
@@ -458,25 +466,25 @@ describe("LocalTestingBackend", () => {
             ])
         })
 
-        it("are fixed up to the PIDs of the records of a later run", async () => {
+        it("are fixed up to the PIDs of the fresh records of a later run", async () => {
             const backend = new LocalTestingBackend()
             const firstRun = new ConcreteLocalFDORecord("LOCAL/a")
             const target = new ConcreteLocalFDORecord("LOCAL/b")
             firstRun.addReference(fromAttr, "LOCAL/b")
             await publishAll(backend, firstRun, target)
 
-            // The second run of the same mapping creates new records for the
-            // same local IDs. They keep the PIDs of the first run, and the
-            // references are fixed up to those PIDs.
+            // The second run of the same mapping publishes new records: they
+            // receive fresh PIDs, and the references are fixed up to those
+            // PIDs.
             const secondRun = new ConcreteLocalFDORecord("LOCAL/a")
             const secondTarget = new ConcreteLocalFDORecord("LOCAL/b")
             secondRun.addReference(fromAttr, "LOCAL/b")
             await publishAll(backend, secondRun, secondTarget)
 
-            expect(secondRun.PID).toBe(firstRun.PID)
-            expect(secondTarget.PID).toBe(target.PID)
+            expect(secondRun.PID).not.toBe(firstRun.PID)
+            expect(secondTarget.PID).not.toBe(target.PID)
             const resolved = await backend.resolveRecord(secondRun.PID!)
-            expect(resolved?.get("attr/from")).toBe(target.PID)
+            expect(resolved?.get("attr/from")).toBe(secondTarget.PID)
         })
 
         it("include the back-references of bidirectional references", async () => {

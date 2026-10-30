@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it } from "vitest"
 import {
     ConcreteLocalFDORecord,
     ConcreteProfile,
@@ -42,7 +42,7 @@ describe("PlaygroundBackend publish events", () => {
     it("emits a created event for a new record", async () => {
         const { events, subscribe } = collect()
         const unsubscribe = subscribe()
-        const backend = new PlaygroundBackend()
+        const backend = PlaygroundBackend.getInstance()
 
         await backend.publishRecord(makeRecord("LOCAL/one", "One"))
 
@@ -55,7 +55,7 @@ describe("PlaygroundBackend publish events", () => {
     it("emits an updated event when the record has a PID already", async () => {
         const { events, subscribe } = collect()
         const unsubscribe = subscribe()
-        const backend = new PlaygroundBackend()
+        const backend = PlaygroundBackend.getInstance()
         const record = makeRecord("LOCAL/one", "One")
         await backend.publishRecord(record)
 
@@ -72,7 +72,7 @@ describe("PlaygroundBackend publish events", () => {
     it("classifies the records of publishGraph by existing PID", async () => {
         const { events, subscribe } = collect()
         const unsubscribe = subscribe()
-        const backend = new PlaygroundBackend()
+        const backend = PlaygroundBackend.getInstance()
         const graph = new LocalFDOGraph()
         graph.addRecord(makeRecord("LOCAL/one", "One"))
         graph.addRecord(makeRecord("LOCAL/two", "Two"))
@@ -100,7 +100,7 @@ describe("PlaygroundBackend publish events", () => {
     it("classifies create/update/delete for continuous mappings", async () => {
         const { events, subscribe } = collect()
         const unsubscribe = subscribe()
-        const backend = new PlaygroundBackend()
+        const backend = PlaygroundBackend.getInstance()
 
         const firstContext = new ContinuousMappingContext("TEST/mapping")
         firstContext.newRecord("LOCAL/one").set(nameAttr.pid, "One")
@@ -128,7 +128,7 @@ describe("PlaygroundBackend publish events", () => {
     it("emits created-mapping only once per mapping PID", async () => {
         const { events, subscribe } = collect()
         const unsubscribe = subscribe()
-        const backend = new PlaygroundBackend()
+        const backend = PlaygroundBackend.getInstance()
 
         const firstContext = new ContinuousMappingContext("TEST/mapping")
         firstContext.newRecord("LOCAL/one").set(nameAttr.pid, "One")
@@ -148,7 +148,7 @@ describe("PlaygroundBackend publish events", () => {
 
 describe("PlaygroundBackend store tracking", () => {
     it("getAllRecords returns every tracked record", async () => {
-        const backend = new PlaygroundBackend()
+        const backend = PlaygroundBackend.getInstance()
         const graph = new LocalFDOGraph()
         graph.addRecord(makeRecord("LOCAL/one", "One"))
         graph.addRecord(makeRecord("LOCAL/two", "Two"))
@@ -162,7 +162,7 @@ describe("PlaygroundBackend store tracking", () => {
     })
 
     it("drops deleted PIDs from tracking", async () => {
-        const backend = new PlaygroundBackend()
+        const backend = PlaygroundBackend.getInstance()
         const context = new ContinuousMappingContext("TEST/mapping")
         context.newRecord("LOCAL/one").set(nameAttr.pid, "One")
         await backend.publishContinuous(context.build())
@@ -179,7 +179,7 @@ describe("PlaygroundBackend store tracking", () => {
     })
 
     it("resetStore clears tracking and emits an empty event list", async () => {
-        const backend = new PlaygroundBackend()
+        const backend = PlaygroundBackend.getInstance()
         await backend.publishRecord(makeRecord("LOCAL/one", "One"))
 
         const { events, subscribe } = collect()

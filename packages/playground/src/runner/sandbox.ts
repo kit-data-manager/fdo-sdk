@@ -80,7 +80,7 @@ export async function runScript(
         error: (...values) => push("error", values),
     }
 
-    const backend = new PlaygroundBackend()
+    const backend = PlaygroundBackend.getInstance()
     let snapshotQueue = Promise.resolve()
     const refreshSnapshot = (): void => {
         // Serializing keeps the snapshots in emission order even though

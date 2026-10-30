@@ -49,12 +49,10 @@ const store: {
     pidCounter: number
     records: Map<PID, StoredRecord>
     mappings: Map<PID, Set<PID>>
-    unmapped: Set<PID>
 } = {
     pidCounter: 0,
     records: new Map(),
     mappings: new Map(),
-    unmapped: new Set(),
 }
 
 class RestoredFDORecord extends ConcreteFDORecord {
@@ -88,11 +86,18 @@ class RestoredFDORecord extends ConcreteFDORecord {
  *   mapping.
  * - {@link publishRecord} publishes a single record, without a mapping.
  *
- * Every record that does not have a PID yet gets one assigned. A record that
- * was published before keeps its PID, so that PIDs stay stable over several
- * runs of the same mapping: the PID of a record is looked up by its local ID,
- * within the scope it was published in — the mapping for a continuous
- * mapping, the store of the unpublished records otherwise.
+ * A record that is published without a PID is always published as a new
+ * record: it receives a fresh PID, even if a record with the same local ID was
+ * published before. A record that is published with a PID is upserted: the
+ * record is created under that PID, or an existing record with that PID is
+ * overwritten.
+ *
+ * A continuous mapping decides which records are new and which ones already
+ * exist: the mapping result separates the records to create (no PID yet) from
+ * the records to update (with the PID they were published with in an earlier
+ * run) and the records to delete (with their PIDs). Running the same mapping
+ * against the same data therefore leaves the store unchanged, while every
+ * publication without a mapping grows the store.
  *
  * The records are referenced by their local ID until they are published, just
  * like a client that passes a placeholder PID to a PID service. The backend
@@ -139,17 +144,17 @@ export class LocalTestingBackend
         const deleted: PID[] = []
         for (const pid of mappingResult.delete) {
             mappingRecords.delete(pid)
-            store.unmapped.delete(pid)
             if (store.records.delete(pid)) deleted.push(pid)
         }
 
-        // The records of the mapping are published.
+        // The records of the mapping are published. The records to update
+        // carry the PIDs they were published with, so they overwrite the
+        // existing records; the records to create receive fresh PIDs.
         this.publishRecords(
             [
                 ...mappingResult.create.getRecords(),
                 ...mappingResult.update.getRecords(),
             ],
-            mappingRecords,
             mappingPID,
         )
 
@@ -169,11 +174,7 @@ export class LocalTestingBackend
     async publishGraph(
         graph: ReadOnlyFDOGraph<FDORecord>,
     ): Promise<ReadOnlyFDOGraph<PublishedFDORecord>> {
-        const published = this.publishRecords(
-            graph.getRecords(),
-            store.unmapped,
-            undefined,
-        )
+        const published = this.publishRecords(graph.getRecords(), undefined)
 
         const result = new PublishedFDOGraph()
         for (const { pid } of published) {
@@ -186,11 +187,7 @@ export class LocalTestingBackend
      * Publishes a single record, without a mapping.
      */
     async publishRecord(record: FDORecord): Promise<PublishedFDORecord> {
-        const published = this.publishRecords(
-            [record],
-            store.unmapped,
-            undefined,
-        )
+        const published = this.publishRecords([record], undefined)
         return this.restoredRecord(published[0]!.pid)
     }
 
@@ -217,7 +214,6 @@ export class LocalTestingBackend
         store.pidCounter = 0
         store.records.clear()
         store.mappings.clear()
-        store.unmapped.clear()
     }
 
     /**
@@ -248,27 +244,23 @@ export class LocalTestingBackend
      * Assigns the PIDs of the given records, fixes up their references and
      * stores them.
      *
+     * A record without a PID always receives a fresh PID: it is published as a
+     * new record. A record with a PID is upserted: the record is stored under
+     * that PID, overwriting an existing record with the same PID.
+     *
      * @param records the records to publish
-     * @param scope the PIDs that are already published in the scope of the
-     * publication: the records of a mapping, or the records that were
-     * published without a mapping. It determines the PID a record that was
-     * published before keeps.
      * @param mappingPID the PID of the mapping the records are part of, if the
      * records are published as part of a mapping
      */
     private publishRecords(
         records: FDORecord[],
-        scope: Set<PID>,
         mappingPID: PID | undefined,
     ): { pid: PID; localID: LocalID | undefined; record: FDORecord }[] {
         // The PIDs of all records are determined first: the references between
         // the records are expressed in terms of these PIDs.
         const published = records.map((record) => {
             const localID = this.localIDOf(record)
-            const pid =
-                record.PID ??
-                this.findPublishedPID(scope, localID) ??
-                this.nextPID()
+            const pid = record.PID ?? this.nextPID()
             ;(record as { PID: PID }).PID = pid
             return { pid, localID, record }
         })
@@ -342,8 +334,9 @@ export class LocalTestingBackend
                 profiles: [...record.getProfiles()],
             })
 
-            scope.add(pid)
-            if (mappingPID !== undefined) store.unmapped.delete(pid)
+            if (mappingPID !== undefined) {
+                this.getOrCreateMappingRecords(mappingPID).add(pid)
+            }
         }
 
         return published
@@ -378,22 +371,6 @@ export class LocalTestingBackend
         return new RestoredFDORecord(
             store.records.get(pid)!,
         ) as PublishedFDORecord
-    }
-
-    /**
-     * The PID of the record that was published in the given scope under the
-     * given local ID, if there is one.
-     */
-    private findPublishedPID(
-        published: Set<PID>,
-        localID: LocalID | undefined,
-    ): PID | undefined {
-        if (localID === undefined) return undefined
-
-        for (const pid of published) {
-            if (store.records.get(pid)?.localID === localID) return pid
-        }
-        return undefined
     }
 
     private localIDOf(record: FDORecord): LocalID | undefined {

@@ -186,7 +186,7 @@ describe("runScript", () => {
             [
                 'import { ConcreteLocalFDORecord, LocalFDOGraph } from "@fdo-sdk/primitives"',
                 'import { PlaygroundBackend } from "@fdo-sdk/playground"',
-                "const backend = new PlaygroundBackend()",
+                "const backend = PlaygroundBackend.getInstance()",
                 'const record = new ConcreteLocalFDORecord("LOCAL/one")',
                 'record.set("attr/name", "one")',
                 "const graph = new LocalFDOGraph()",
@@ -217,7 +217,7 @@ describe("runScript", () => {
             [
                 'import { ConcreteLocalFDORecord, LocalFDOGraph } from "@fdo-sdk/primitives"',
                 'import { PlaygroundBackend } from "@fdo-sdk/playground"',
-                "const backend = new PlaygroundBackend()",
+                "const backend = PlaygroundBackend.getInstance()",
                 'const record = new ConcreteLocalFDORecord("LOCAL/one")',
                 'record.set("attr/name", "one")',
                 "const graph = new LocalFDOGraph()",

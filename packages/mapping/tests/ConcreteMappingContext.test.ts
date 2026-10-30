@@ -28,6 +28,7 @@ describe("ContinuousMappingContext", () => {
             const result = context.build()
 
             expect(result.create.getRecord("LOCAL/1")).toBeDefined()
+            expect(result.create.getRecord("LOCAL/1")!.PID).toBeUndefined()
             expect(result.delete).toEqual([])
         })
 
@@ -48,8 +49,10 @@ describe("ContinuousMappingContext", () => {
 
             expect(result.delete).toEqual(["TEST/2"])
             // The record exists in the remote graph already, so it is updated
-            // rather than created.
+            // rather than created. The update carries the PID of the remote
+            // record, so that publishing overwrites the existing record.
             expect(result.update.getRecord("LOCAL/1")).toBeDefined()
+            expect(result.update.getRecord("LOCAL/1")!.PID).toBe("TEST/1")
             expect(result.create.getRecord("LOCAL/1")).toBeUndefined()
             expect(result.update.getRecord("LOCAL/2")).toBeUndefined()
         })
