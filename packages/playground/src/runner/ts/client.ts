@@ -1,4 +1,9 @@
-import type { TsCompletion, TsDiagnostic, TsEntryDetails } from "./project.js"
+import type {
+    TsCompletion,
+    TsDiagnostic,
+    TsEntryDetails,
+    TsHover,
+} from "./project.js"
 import type { WorkerRequest, WorkerResponse } from "./protocol.js"
 
 type Pending = {
@@ -62,6 +67,10 @@ class TsWorkerClient {
 
     details(name: string, offset: number): Promise<TsEntryDetails> {
         return this.request((id) => ({ id, type: "details", name, offset }))
+    }
+
+    hover(offset: number): Promise<TsHover> {
+        return this.request((id) => ({ id, type: "hover", offset }))
     }
 
     diagnostics(): Promise<TsDiagnostic[]> {

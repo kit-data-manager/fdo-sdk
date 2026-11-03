@@ -4,6 +4,7 @@ import type { GraphSnapshot } from "../runner/snapshot.js"
 const NODE_RADIUS = 17
 const LINK_LENGTH = 120
 const VIEW_PADDING = 70
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
 
 const PALETTE = [
     "#3fb950",
@@ -18,6 +19,12 @@ const PALETTE = [
 
 type SimNode = {
     id: string
+    /**
+     * Stable identity across runs. Published records get a new PID every time
+     * they are republished, but their local ID stays the same, so positions
+     * can be carried over instead of resetting the whole layout.
+     */
+    key: string
     pid: string | undefined
     label: string
     color: string
@@ -57,12 +64,12 @@ function buildSimulation(snapshot: GraphSnapshot): Simulation {
         }
     }
 
-    const goldenAngle = Math.PI * (3 - Math.sqrt(5))
     const nodes: SimNode[] = snapshot.records.map((record, index) => {
-        const angle = index * goldenAngle
+        const angle = index * GOLDEN_ANGLE
         const radius = 34 + 30 * Math.sqrt(index)
         return {
             id: record.id,
+            key: record.localID ?? record.id,
             pid: record.pid,
             label: shorten(record.id),
             color:
@@ -176,22 +183,71 @@ export function ForceGraph({
     selectedId,
     onSelect,
 }: ForceGraphProps) {
-    const previousPositions = useRef<Map<string, { x: number; y: number }>>(
-        new Map(),
-    )
+    const simulationRef = useRef<Simulation | null>(null)
     const simulation = useMemo(() => {
-        const result = buildSimulation(snapshot)
-        const previous = previousPositions.current
-        for (const node of result.nodes) {
-            const old = previous.get(node.id)
-            if (old) {
-                node.x = old.x
-                node.y = old.y
-            }
-        }
-        previousPositions.current = new Map(
-            result.nodes.map((node) => [node.id, { x: node.x, y: node.y }]),
+        const previousNodes = simulationRef.current?.nodes ?? []
+        const previousById = new Map(
+            previousNodes.map((node) => [node.id, node]),
         )
+        // Republishing gives a record a new PID, so a record that carries the
+        // same local ID is still the same node for layout purposes.
+        const previousByKey = new Map<string, SimNode[]>()
+        for (const node of previousNodes) {
+            const bucket = previousByKey.get(node.key)
+            if (bucket === undefined) previousByKey.set(node.key, [node])
+            else bucket.push(node)
+        }
+
+        const result = buildSimulation(snapshot)
+        const reused = new Set<SimNode>()
+        const fresh: SimNode[] = []
+        let anchorX = 0
+        let anchorY = 0
+        let carried = 0
+
+        const carry = (node: SimNode, old: SimNode) => {
+            node.x = old.x
+            node.y = old.y
+            anchorX += old.x
+            anchorY += old.y
+            carried++
+            reused.add(old)
+        }
+
+        for (const node of result.nodes) {
+            const exact = previousById.get(node.id)
+            if (exact !== undefined && !reused.has(exact)) {
+                carry(node, exact)
+                continue
+            }
+            const match = previousByKey
+                .get(node.key)
+                ?.find((candidate) => !reused.has(candidate))
+            if (match !== undefined) carry(node, match)
+            else fresh.push(node)
+        }
+
+        // Place genuinely new records on a ring outside the settled cluster,
+        // so updates only nudge the layout instead of resetting and exploding
+        // it. The very first snapshot keeps the seed spiral.
+        if (carried > 0) {
+            anchorX /= carried
+            anchorY /= carried
+            let clusterRadius = 0
+            for (const node of reused) {
+                clusterRadius = Math.max(
+                    clusterRadius,
+                    Math.hypot(node.x - anchorX, node.y - anchorY),
+                )
+            }
+            fresh.forEach((node, index) => {
+                const angle = index * GOLDEN_ANGLE
+                const distance = clusterRadius + 60 + 20 * Math.sqrt(index)
+                node.x = anchorX + Math.cos(angle) * distance
+                node.y = anchorY + Math.sin(angle) * distance
+            })
+        }
+
         return result
     }, [snapshot])
 
@@ -208,6 +264,7 @@ export function ForceGraph({
     const suppressClickRef = useRef(false)
 
     useEffect(() => {
+        simulationRef.current = simulation
         let raf = 0
         const step = () => {
             const energy = simulate(

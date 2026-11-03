@@ -60,6 +60,9 @@ worker.onmessage = (event: MessageEvent<WorkerRequest>) => {
         case "details":
             result = project.details(request.name, request.offset)
             break
+        case "hover":
+            result = project.hover(request.offset)
+            break
         case "diagnostics":
             result = project.diagnostics()
             break

@@ -44,10 +44,13 @@ export type TsDiagnostic = {
 
 export type TsEntryDetails = { detail: string; doc: string } | null
 
+export type TsHover = { detail: string; doc: string } | null
+
 export type FdoTsProject = {
     update(code: string): void
     complete(offset: number): TsCompletion[]
     details(name: string, offset: number): TsEntryDetails
+    hover(offset: number): TsHover
     diagnostics(): TsDiagnostic[]
 }
 
@@ -101,6 +104,7 @@ export function createProject(
 
     let version = 0
     let currentCode = ""
+    let lastInput: string | null = null
     let insertions: HintInsertion[] = []
 
     function resolveRelative(
@@ -173,6 +177,11 @@ export function createProject(
 
     return {
         update(code: string): void {
+            // Completions and the linter both push the document before doing
+            // their work; hovering must not invalidate the language service
+            // when nothing changed.
+            if (code === lastInput) return
+            lastInput = code
             const applied = applyHints(code)
             currentCode = applied.shadow
             insertions = applied.insertions
@@ -222,6 +231,17 @@ export function createProject(
             return {
                 detail: displayPartsToString(details.displayParts),
                 doc: displayPartsToString(details.documentation),
+            }
+        },
+
+        hover(offset: number): TsHover {
+            const at = shadowOffset(offset)
+            if (at === null) return null
+            const info = services.getQuickInfoAtPosition(USER_FILE, at)
+            if (!info) return null
+            return {
+                detail: displayPartsToString(info.displayParts),
+                doc: displayPartsToString(info.documentation),
             }
         },
 

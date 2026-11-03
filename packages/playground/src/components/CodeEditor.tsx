@@ -1,16 +1,18 @@
-import type {
-    Completion,
-    CompletionContext,
-    CompletionResult,
-    CompletionSource,
+import {
+    autocompletion,
+    type Completion,
+    type CompletionContext,
+    type CompletionResult,
+    type CompletionSource,
 } from "@codemirror/autocomplete"
-import { javascript, javascriptLanguage } from "@codemirror/lang-javascript"
+import { javascript } from "@codemirror/lang-javascript"
 import { linter, type Diagnostic } from "@codemirror/lint"
+import { Prec } from "@codemirror/state"
+import { hoverTooltip, keymap } from "@codemirror/view"
 import CodeMirror from "@uiw/react-codemirror"
+import { foldImports, importFolding } from "./importFolding.js"
 import { tsClient } from "../runner/ts/client.js"
 import type { TsCompletion } from "../runner/ts/project.js"
-
-const IDENTIFIER = /^[A-Za-z_$][\w$]*$/
 
 /** TypeScript's ScriptElementKind values (TS 6 strings) to CodeMirror types. */
 const KIND_TYPES: Record<string, string> = {
@@ -60,21 +62,19 @@ async function showDetails(
 const tsCompletionSource: CompletionSource = async (
     context: CompletionContext,
 ): Promise<CompletionResult | null> => {
-    const before = context.matchBefore(/[\w$.]*/)
-    if (before === null) return null
-    const text = context.state.doc.sliceString(before.from, before.to)
-    let word: string | null = null
-    const member = text.match(/^([A-Za-z_$][\w$]*)\.(\w*)$/)
-    if (member !== null) word = member[2] ?? ""
-    else if (IDENTIFIER.test(text)) word = text
-    if (word === null) return null
-
+    // Ask the language service at every position, not just after an
+    // identifier: object literals in a typed argument (e.g. the attributes
+    // passed to `addProfile`) have no word before the cursor, yet TypeScript
+    // knows exactly which properties are allowed there.
     const code = context.state.doc.toString()
-    const offset = before.to
     await tsClient.update(code)
     if (context.aborted) return null
-    const entries = await tsClient.complete(offset)
+    const entries = await tsClient.complete(context.pos)
     if (context.aborted || entries.length === 0) return null
+
+    const before = context.matchBefore(/[\w$]*/)
+    const from = before?.from ?? context.pos
+    const offset = context.pos
 
     const options: Completion[] = entries.map((entry) => {
         const type = completionType(entry.kind)
@@ -87,10 +87,37 @@ const tsCompletionSource: CompletionSource = async (
         return completion
     })
     return {
-        from: before.to - word.length,
+        from,
         options,
     }
 }
+
+const tsHover = hoverTooltip(async (view, pos) => {
+    const code = view.state.doc.toString()
+    await tsClient.update(code)
+    const info = await tsClient.hover(pos)
+    if (info === null || info.detail === "") return null
+
+    const word = view.state.wordAt(pos)
+    return {
+        pos: word?.from ?? pos,
+        end: word?.to ?? pos,
+        create() {
+            const container = document.createElement("div")
+            container.className = "cm-ts-hover"
+            const signature = document.createElement("code")
+            signature.textContent = info.detail
+            container.append(signature)
+            if (info.doc !== "") {
+                const doc = document.createElement("div")
+                doc.className = "cm-ts-hover-doc"
+                doc.textContent = info.doc
+                container.append(doc)
+            }
+            return { dom: container }
+        },
+    }
+})
 
 const tsLinter = linter(async (view) => {
     const code = view.state.doc.toString()
@@ -111,12 +138,36 @@ const tsLinter = linter(async (view) => {
     })
 })
 
+/**
+ * Runs the script from inside the editor. CodeMirror's default keymap binds
+ * Mod-Enter to `insertBlankLine`, which runs before the window-level shortcut
+ * listener — hence this highest-precedence binding.
+ */
+function runKeymap(onRun: () => void) {
+    const run = {
+        run: () => {
+            onRun()
+            return true
+        },
+        stopPropagation: true,
+    }
+    return Prec.highest(
+        keymap.of([
+            { key: "Mod-Enter", ...run },
+            { key: "Ctrl-Enter", ...run },
+            { key: "Meta-Enter", ...run },
+        ]),
+    )
+}
+
 export function CodeEditor({
     value,
     onChange,
+    onRun,
 }: {
     value: string
     onChange: (value: string) => void
+    onRun: () => void
 }) {
     return (
         <div className="code-editor">
@@ -125,13 +176,18 @@ export function CodeEditor({
                 onChange={onChange}
                 theme="dark"
                 extensions={[
+                    runKeymap(onRun),
                     javascript(),
-                    javascriptLanguage.data.of({
-                        autocomplete: tsCompletionSource,
-                    }),
+                    // TypeScript is the only completion source. The language's
+                    // built-in keyword/snippet and local-variable sources are
+                    // disabled — they flooded the list with unrelated entries.
+                    autocompletion({ override: [tsCompletionSource] }),
                     tsLinter,
+                    tsHover,
+                    importFolding,
                 ]}
-                basicSetup={{ foldGutter: false, autocompletion: true }}
+                basicSetup={{ foldGutter: false, autocompletion: false }}
+                onCreateEditor={foldImports}
             />
         </div>
     )

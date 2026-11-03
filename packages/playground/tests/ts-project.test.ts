@@ -96,6 +96,32 @@ describe("createProject completions", () => {
         expect(names).not.toContain("addProfile")
     })
 
+    it("completes profile attributes in the addProfile object literal", () => {
+        const project = makeProject()
+        const code = [
+            'import { LocalFDOGraph } from "@fdo-sdk/primitives"',
+            'import { SIMPLE_PROFILES } from "@fdo-sdk/simple-types"',
+            "const graph = new LocalFDOGraph()",
+            'const software = graph.newRecord("LOCAL/software/x")',
+            "software.addProfile(SIMPLE_PROFILES.SOFTWARE, {",
+            "    ",
+            "})",
+        ].join("\n")
+        project.update(code)
+        const names = project
+            .complete(code.indexOf("    \n})") + 4)
+            .map((entry) => entry.name)
+
+        expect(names).toEqual(
+            expect.arrayContaining([
+                "softwareRepositoryType",
+                "softwareLocation",
+                "softwareLicense",
+                "readmeLocation",
+            ]),
+        )
+    })
+
     it("infers the mapping context parameter through the JSDoc hint", () => {
         const project = makeProject()
         const code = [
@@ -176,6 +202,33 @@ describe("createProject completions", () => {
 
         expect(details).not.toBeNull()
         expect(details!.detail).toContain("addRecord")
+    })
+
+    it("reports type information on hover", () => {
+        const project = makeProject()
+        const code = [
+            'import { LocalFDOGraph } from "@fdo-sdk/primitives"',
+            "const graph = new LocalFDOGraph()",
+            "graph.addRecord",
+        ].join("\n")
+        project.update(code)
+
+        const variable = project.hover(code.indexOf("graph =") + 2)
+        expect(variable).not.toBeNull()
+        expect(variable!.detail).toContain("LocalFDOGraph")
+
+        const method = project.hover(code.lastIndexOf("addRecord") + 2)
+        expect(method).not.toBeNull()
+        expect(method!.detail).toContain("addRecord")
+    })
+
+    it("returns no hover information outside an expression", () => {
+        const project = makeProject()
+        const code =
+            'import { LocalFDOGraph } from "@fdo-sdk/primitives"\n\nconst graph = new LocalFDOGraph()'
+        project.update(code)
+
+        expect(project.hover(code.indexOf("\n\n") + 1)).toBeNull()
     })
 
     it("maps positions back past the JSDoc hints", () => {

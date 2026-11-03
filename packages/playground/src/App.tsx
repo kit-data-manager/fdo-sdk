@@ -146,7 +146,7 @@ export function App() {
         <div className="app">
             <header className="app-header">
                 <div className="app-title">
-                    <h1>FDO Playground</h1>
+                    <h1>FDO SDK Playground</h1>
                     <p>
                         Build records, graphs and continuous mappings in the
                         browser.
@@ -221,8 +221,10 @@ export function App() {
                                     </header>
                                     <div className="editor-body">
                                         <CodeEditor
+                                            key={exampleId}
                                             value={code}
                                             onChange={setCode}
+                                            onRun={run}
                                         />
                                     </div>
                                 </section>
