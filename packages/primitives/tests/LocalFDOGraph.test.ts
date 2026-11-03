@@ -29,22 +29,65 @@ describe("LocalFDOGraph", () => {
             expect(graph.getRecords()).toHaveLength(1)
         })
 
-        it("replaces an existing record with the same localID", () => {
+        it("throws when a record with the same id already exists", () => {
+            const graph: FDOGraph<LocalFDORecord> = new LocalFDOGraph()
+            const original = new ConcreteLocalFDORecord("LOCAL/1", "rec/a")
+            graph.addRecord(original)
+            const replacement: FDORecord = new ConcreteLocalFDORecord("LOCAL/1")
+            expect(() => graph.addRecord(replacement)).toThrow()
+            expect(graph.getRecords()).toEqual([original])
+            expect(graph.getRecord("LOCAL/1")).toBe(original)
+            expect(graph.getRecord("rec/a")).toBeDefined()
+        })
+
+        it("replaces an existing record with the same localID when overwrite is true", () => {
             const graph: FDOGraph<LocalFDORecord> = new LocalFDOGraph()
             graph.addRecord(new ConcreteLocalFDORecord("LOCAL/1", "rec/a"))
             const replacement: FDORecord = new ConcreteLocalFDORecord("LOCAL/1")
-            graph.addRecord(replacement)
+            graph.addRecord(replacement, { overwrite: true })
             expect(graph.getRecords()).toEqual([replacement])
             expect(graph.getRecord("LOCAL/1")).toBe(replacement)
             expect(graph.getRecord("rec/a")).toBeUndefined()
         })
 
-        it("re-indexes the PID when a record with the same localID is replaced", () => {
+        it("does not re-index the PID when a record with the same localID is replaced and overwrite is false", () => {
             const graph: LocalFDOGraph = new LocalFDOGraph()
             graph.addRecord(new ConcreteLocalFDORecord("LOCAL/1", "rec/a"))
-            graph.addRecord(new ConcreteLocalFDORecord("LOCAL/1", "rec/b"))
+            expect(() =>
+                graph.addRecord(new ConcreteLocalFDORecord("LOCAL/1", "rec/b")),
+            ).toThrow()
+            expect(graph.getRecord("rec/a")?.localID).toBe("LOCAL/1")
+            expect(graph.getRecord("rec/b")).toBeUndefined()
+        })
+
+        it("re-indexes the PID when a record with the same localID is replaced and overwrite is true", () => {
+            const graph: LocalFDOGraph = new LocalFDOGraph()
+            graph.addRecord(new ConcreteLocalFDORecord("LOCAL/1", "rec/a"))
+            graph.addRecord(new ConcreteLocalFDORecord("LOCAL/1", "rec/b"), {
+                overwrite: true,
+            })
             expect(graph.getRecord("rec/a")).toBeUndefined()
             expect(graph.getRecord("rec/b")?.localID).toBe("LOCAL/1")
+        })
+    })
+
+    describe("newRecord", () => {
+        it("creates a new record with the given local ID and adds it to the graph", () => {
+            const graph = new LocalFDOGraph()
+            const record = graph.newRecord("LOCAL/1")
+            expect(record).toBeDefined()
+            expect(graph.getRecord("LOCAL/1")).toBeDefined()
+        })
+
+        it("creates a new record with the given local ID and replaces records with the same local id in the graph", () => {
+            const graph = new LocalFDOGraph()
+            const a = graph.newRecord("LOCAL/1")
+            expect(a).toBeDefined()
+            expect(graph.getRecord("LOCAL/1")).toBe(a)
+
+            const b = graph.newRecord("LOCAL/1", { overwrite: true })
+            expect(b).toBeDefined()
+            expect(graph.getRecord("LOCAL/1")).toBe(b)
         })
     })
 

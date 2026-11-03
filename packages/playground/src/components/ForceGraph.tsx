@@ -81,6 +81,10 @@ function buildSimulation(snapshot: GraphSnapshot): Simulation {
     const links: SimLink[] = []
     for (const record of snapshot.records) {
         for (const reference of record.references) {
+            // Derived references mirror a bidirectional reference that is
+            // declared on the other record; the declared edge already
+            // represents the relationship in the graph.
+            if (reference.derived) continue
             if (!nodeIds.has(record.id) || !nodeIds.has(reference.target))
                 continue
             const key = `${record.id}\u0000${reference.target}\u0000${reference.attribute}`

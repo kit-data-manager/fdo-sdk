@@ -21,6 +21,7 @@ export const SIMPLE_ATTRIBUTES: {
     readonly IS_PART_OF: Attribute<string | string[]>
     readonly HAS_PART: Attribute<string>
     readonly CREATED_WITH_SOFTWARE: Attribute<string | string[]>
+    readonly LOCAL_ID: Attribute<string>
 } = {
     OWNER: { pid: FDO_TYPES.OWNER, readableName: "Owner" },
     HELMHOLTZ_RESEARCH_FIELD: {
@@ -82,5 +83,9 @@ export const SIMPLE_ATTRIBUTES: {
     CREATED_WITH_SOFTWARE: {
         pid: FDO_TYPES.CREATED_WITH_SOFTWARE,
         readableName: "Created with Software",
+    },
+    LOCAL_ID: {
+        pid: FDO_TYPES.LOCAL_ID,
+        readableName: "Local ID",
     },
 }

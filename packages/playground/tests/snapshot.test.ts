@@ -68,6 +68,20 @@ describe("snapshotGraph", () => {
             pid: "attr/authoredDatasets",
             value: "LOCAL/dataset",
         })
+        // The bidirectional reference is declared on the dataset record; the
+        // author record shows the inverse view of the same relationship.
+        expect(ada.references).toEqual([
+            {
+                attribute: "attr/authoredDatasets",
+                target: "LOCAL/dataset",
+                direction: "bidi",
+                derived: true,
+            },
+        ])
+
+        // A unidirectional reference is not mirrored on the target.
+        const grace = snapshot.records[1]!
+        expect(grace.references).toEqual([])
     })
 
     it("resolves published reference targets to PIDs", async () => {
@@ -87,6 +101,18 @@ describe("snapshotGraph", () => {
         for (const reference of dataset.references) {
             expect(ids).toContain(reference.target)
         }
+
+        const ada = snapshot.records.find(
+            (record) => record.localID === "LOCAL/ada",
+        )!
+        expect(ada.references).toEqual([
+            {
+                attribute: "attr/authoredDatasets",
+                target: dataset.pid,
+                direction: "bidi",
+                derived: true,
+            },
+        ])
     })
 })
 
@@ -113,5 +139,37 @@ describe("snapshotRecords", () => {
         const snapshot = snapshotRecords([], "Published graph")
 
         expect(snapshot.records).toEqual([])
+    })
+
+    it("does not duplicate a bidirectional reference that both records declare", () => {
+        const a = new ConcreteLocalFDORecord("LOCAL/a")
+        const b = new ConcreteLocalFDORecord("LOCAL/b")
+        a.addReferenceBidi(hasAuthorAttr, authoredAttr, "LOCAL/b")
+        b.addReferenceBidi(authoredAttr, hasAuthorAttr, "LOCAL/a")
+
+        const snapshot = snapshotRecords([a, b], "Local")
+
+        expect(snapshot.records[1]!.references).toEqual([
+            {
+                attribute: "attr/authoredDatasets",
+                target: "LOCAL/a",
+                direction: "bidi",
+            },
+        ])
+    })
+
+    it("keeps a bidirectional reference to a record outside the snapshot", () => {
+        const record = new ConcreteLocalFDORecord("LOCAL/a")
+        record.addReferenceBidi(hasAuthorAttr, authoredAttr, "LOCAL/outside")
+
+        const snapshot = snapshotRecords([record], "Local")
+
+        expect(snapshot.records[0]!.references).toEqual([
+            {
+                attribute: "attr/hasAuthor",
+                target: "LOCAL/outside",
+                direction: "bidi",
+            },
+        ])
     })
 })

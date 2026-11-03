@@ -317,9 +317,9 @@ describe("LocalTestingBackend", () => {
                 newGraphWithRecords(record),
             )
 
-            expect(published.getRecord(record.PID!)?.get("attr/localId")).toBe(
-                "LOCAL/a",
-            )
+            expect(
+                published.getRecord(record.PID!)?.get("0.SIMPLE/LOCAL_ID"),
+            ).toBe("LOCAL/a")
         })
 
         it("fixes up the references between the published records", async () => {
@@ -401,7 +401,7 @@ describe("LocalTestingBackend", () => {
 
             const published = await backend.publishRecord(record)
 
-            expect(published.get("attr/localId")).toBe("LOCAL/a")
+            expect(published.get("0.SIMPLE/LOCAL_ID")).toBe("LOCAL/a")
         })
 
         it("does not reference a mapping from the published record", async () => {
@@ -420,7 +420,7 @@ describe("LocalTestingBackend", () => {
             const published = await backend.publishRecord(record)
 
             expect(published.PID).toBe(record.PID)
-            expect(published.get("attr/localId")).toBeUndefined()
+            expect(published.get("0.SIMPLE/LOCAL_ID")).toBeUndefined()
         })
 
         it("assigns a new PID to a record that is published again", async () => {
@@ -545,7 +545,7 @@ describe("LocalTestingBackend", () => {
 
             const resolved = await backend.resolveRecord(record.PID!)
 
-            expect(resolved?.get("attr/localId")).toBe("LOCAL/a")
+            expect(resolved?.get("0.SIMPLE/LOCAL_ID")).toBe("LOCAL/a")
         })
 
         it("is the only local ID of the published record", async () => {
@@ -558,7 +558,7 @@ describe("LocalTestingBackend", () => {
             const resolved = await backend.resolveRecord(recordA.PID!)
             const localIDs = Object.entries(resolved?.toJSON() ?? {}).flatMap(
                 ([attribute, value]) =>
-                    attribute === "attr/localId"
+                    attribute === "0.SIMPLE/LOCAL_ID"
                         ? []
                         : (Array.isArray(value) ? value : [value]).filter(
                               (entry) =>
@@ -579,7 +579,7 @@ describe("LocalTestingBackend", () => {
             )
 
             const resolved = await backend.resolveRecord(record.PID!)
-            expect(resolved?.get("attr/localId")).toBeUndefined()
+            expect(resolved?.get("0.SIMPLE/LOCAL_ID")).toBeUndefined()
         })
     })
 

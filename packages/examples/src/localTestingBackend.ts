@@ -396,7 +396,7 @@ show(
 // The published records contain no local IDs: the backend assigned a PID to
 // every record and fixed up the references, so the references of the published
 // records point to PIDs. The only local ID a published record holds is its own
-// — in `attr/localId`, where it identifies the record for the mapping that
+// — in `0.SIMPLE/LOCAL_ID`, where it identifies the record for the mapping that
 // published it.
 show(
     "Local IDs left in the published records",
@@ -562,7 +562,10 @@ const publishedNotice = await publisher.publishRecord(notice)
 
 show("Published record", publishedNotice.toJSON())
 show("PID of the published record", publishedNotice.PID)
-show("The record keeps its own local ID", publishedNotice.get("attr/localId"))
+show(
+    "The record keeps its own local ID",
+    publishedNotice.get("0.SIMPLE/LOCAL_ID"),
+)
 show(
     "The record does not point back to a mapping",
     publishedNotice.get("attr/partOfMapping"),

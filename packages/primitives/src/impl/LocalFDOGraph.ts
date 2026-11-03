@@ -1,37 +1,65 @@
-import type { FDOGraph, LocalFDORecord } from "../interfaces/index.js"
+import type {
+    FDOGraph,
+    FDOGraphAddRecordOptions,
+    LocalFDORecord,
+} from "../interfaces/index.js"
 import type { LocalID, PID, RecordValue } from "../types.js"
+import { ConcreteLocalFDORecord } from "./ConcreteLocalFDORecord.js"
 
 /**
  * A graph of locally created FDO records than can be used without PIDs
  */
-export class LocalFDOGraph<
-    RecordType extends LocalFDORecord = LocalFDORecord,
-> implements FDOGraph<RecordType> {
-    private recordsByLocalID = new Map<LocalID, RecordType>()
+export class LocalFDOGraph implements FDOGraph<LocalFDORecord> {
+    private recordsByLocalID = new Map<LocalID, LocalFDORecord>()
     private pids = new Map<PID, LocalID>()
     private hasBeenBuilt = false
 
-    addRecord(record: RecordType): void {
-        const previous = this.recordsByLocalID.get(record.localID)
-        if (previous?.PID) this.pids.delete(previous.PID)
+    addRecord(
+        record: LocalFDORecord,
+        options?: FDOGraphAddRecordOptions,
+    ): void {
+        const existing = this.recordsByLocalID.get(record.localID)
+        if (existing && (!options || !options.overwrite)) {
+            throw new Error(
+                `A record with the same identifier (${record.localID}) already exists in this graph. Pass \`overwrite: true\` in the method options to overwrite`,
+            )
+        }
+        if (existing?.PID) this.pids.delete(existing.PID)
         this.recordsByLocalID.set(record.localID, record)
         if (record.PID) this.pids.set(record.PID, record.localID)
     }
 
-    findRecord(predicate: (r: RecordType) => boolean): RecordType | undefined {
+    /**
+     * Create a new local FDO record with the given local ID and add it to the graph.
+     * Returns the new local FDO record.
+     * @param localID {@link LocalID} of the new record
+     * @param options Options for the add record method (e.g. `overwrite`)
+     */
+    newRecord(
+        localID: LocalID,
+        options?: FDOGraphAddRecordOptions,
+    ): LocalFDORecord {
+        const record = new ConcreteLocalFDORecord(localID)
+        this.addRecord(record, options)
+        return record
+    }
+
+    findRecord(
+        predicate: (r: LocalFDORecord) => boolean,
+    ): LocalFDORecord | undefined {
         for (const record of this.recordsByLocalID.values()) {
             if (predicate(record)) return record
         }
         return undefined
     }
 
-    getRecord(id: PID | LocalID): RecordType | undefined {
+    getRecord(id: PID | LocalID): LocalFDORecord | undefined {
         const pidOwner = this.pids.get(id as PID)
         if (pidOwner) return this.recordsByLocalID.get(pidOwner)
         return this.recordsByLocalID.get(id as LocalID)
     }
 
-    getRecords(): RecordType[] {
+    getRecords(): LocalFDORecord[] {
         return [...this.recordsByLocalID.values()]
     }
 

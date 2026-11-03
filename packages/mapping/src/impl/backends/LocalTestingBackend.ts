@@ -39,11 +39,22 @@ const hasMappingRecordAttribute: PID = "attr/hasMappingRecord"
 const partOfMappingAttribute: PID = "attr/partOfMapping"
 
 /**
- * The attribute of a record that holds its own local ID. The local ID is the
- * placeholder a record is referenced by until it is published, and it is the
- * only local ID that is allowed to appear in a published record.
+ * The attribute of a record that holds its own local ID, used by this testing
+ * backend to persist the local ID of a published record.
+ *
+ * This is a simplification of the testing setup. Persisting local IDs is the
+ * responsibility of each publish and resolve adapter, and the FDO model does
+ * not prescribe where it happens: an adapter may keep local IDs as record
+ * attributes like this one does, in system metadata that is not part of the
+ * record, or even encode them in the PID. All that matters is that an adapter
+ * can restore the local ID a record was published with when it resolves the
+ * record, so references expressed in terms of local IDs can be resolved again.
+ *
+ * The PID itself mirrors `FDO_TYPES.LOCAL_ID` of `@fdo-sdk/simple-types`,
+ * which is where consumers of the simple types find it. It is spelled out
+ * here because `@fdo-sdk/mapping` does not depend on that package.
  */
-const localIdAttribute: PID = "attr/localId"
+const localIdAttribute: PID = "0.SIMPLE/LOCAL_ID"
 
 const store: {
     pidCounter: number
@@ -107,9 +118,18 @@ class RestoredFDORecord extends ConcreteFDORecord {
  * are fixed up, so a mapping is free to store a local ID in any other
  * attribute.
  *
- * Every published record keeps its own local ID in the `attr/localId`
+ * Every published record keeps its own local ID in the `0.SIMPLE/LOCAL_ID`
  * attribute. It is the only local ID that appears in a published record: it
  * identifies the record for the mapping that published it.
+ *
+ * This attribute is a simplification of the testing backend, not a rule of the
+ * FDO model: every publish and resolve adapter has to implement its own
+ * mechanism for persisting local IDs, and it is free to choose one - record
+ * attributes, system metadata that is not part of the record, or even the PID
+ * itself. Nothing requires a local ID to be visible in the attributes of a
+ * record. The adapters only have to restore the local ID a record was
+ * published with when they resolve it, so references expressed in terms of
+ * local IDs can be resolved again.
  *
  * As the flavor of this setup, the backend adds the high level FDO record of
  * a mapping: it is a record with the PID of the mapping that references,
@@ -315,8 +335,10 @@ export class LocalTestingBackend
                 }
             }
 
-            // The record keeps its own local ID: it is the only local ID that
-            // is allowed to appear in a published record.
+            // For simplicity, this testing backend persists the local ID of
+            // the record in an attribute. Publishing and resolving adapters
+            // are free to use any mechanism they like - record attributes,
+            // system metadata, or the PID itself.
             if (localID !== undefined) {
                 attributes.set(localIdAttribute, localID)
             }

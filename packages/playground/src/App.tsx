@@ -1,4 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react"
+import {
+    Group,
+    Panel,
+    Separator,
+    useDefaultLayout,
+} from "react-resizable-panels"
 import { CodeEditor } from "./components/CodeEditor.js"
 import { ConsolePanel } from "./components/ConsolePanel.js"
 import { ResultsPane } from "./components/ResultsPane.js"
@@ -65,6 +71,10 @@ export function App() {
     const [running, setRunning] = useState(false)
     const runningRef = useRef(false)
     const runIdRef = useRef(0)
+    const mainLayout = useDefaultLayout({ id: "fdo-playground.layout.main" })
+    const editorLayout = useDefaultLayout({
+        id: "fdo-playground.layout.editor",
+    })
 
     const example =
         EXAMPLES.find((candidate) => candidate.id === exampleId) ?? EXAMPLES[0]!
@@ -177,30 +187,71 @@ export function App() {
                 </div>
             </header>
             <main className="app-main">
-                <div className="editor-pane">
-                    <section
-                        className="pane-card editor-card"
-                        aria-label="Code"
-                    >
-                        <header className="pane-header">
-                            <h2>Code</h2>
-                            <p
-                                className="pane-hint"
-                                title={example.description}
+                <Group
+                    orientation="horizontal"
+                    className="app-panels"
+                    defaultLayout={mainLayout.defaultLayout}
+                    onLayoutChanged={mainLayout.onLayoutChanged}
+                >
+                    <Panel id="editor" className="editor-pane" minSize="25%">
+                        <Group
+                            orientation="vertical"
+                            className="editor-panels"
+                            defaultLayout={editorLayout.defaultLayout}
+                            onLayoutChanged={editorLayout.onLayoutChanged}
+                        >
+                            <Panel
+                                id="code"
+                                className="editor-panel"
+                                defaultSize="75%"
+                                minSize="25%"
                             >
-                                {example.description}
-                            </p>
-                        </header>
-                        <div className="editor-body">
-                            <CodeEditor value={code} onChange={setCode} />
-                        </div>
-                    </section>
-                    <ConsolePanel
-                        entries={consoleEntries}
-                        onClear={() => setConsoleEntries([])}
+                                <section
+                                    className="pane-card editor-card"
+                                    aria-label="Code"
+                                >
+                                    <header className="pane-header">
+                                        <h2>Code</h2>
+                                        <p
+                                            className="pane-hint"
+                                            title={example.description}
+                                        >
+                                            {example.description}
+                                        </p>
+                                    </header>
+                                    <div className="editor-body">
+                                        <CodeEditor
+                                            value={code}
+                                            onChange={setCode}
+                                        />
+                                    </div>
+                                </section>
+                            </Panel>
+                            <Separator
+                                className="resize-handle resize-handle-horizontal"
+                                aria-label="Resize code and console panels"
+                            />
+                            <Panel
+                                id="console"
+                                className="console-panel"
+                                defaultSize="25%"
+                                minSize="10%"
+                            >
+                                <ConsolePanel
+                                    entries={consoleEntries}
+                                    onClear={() => setConsoleEntries([])}
+                                />
+                            </Panel>
+                        </Group>
+                    </Panel>
+                    <Separator
+                        className="resize-handle"
+                        aria-label="Resize editor and results panels"
                     />
-                </div>
-                <ResultsPane snapshot={snapshot} />
+                    <Panel id="results" className="results-panel" minSize="25%">
+                        <ResultsPane snapshot={snapshot} />
+                    </Panel>
+                </Group>
             </main>
         </div>
     )

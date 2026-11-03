@@ -16,11 +16,12 @@ import {
     LocalFDOGraph,
     type LocalID,
 } from "@fdo-sdk/primitives"
+import { PublishedFDOGraph } from "@fdo-sdk/primitives"
 
 export class ContinuousMappingContext implements MappingContext {
     readonly #localGraph = new LocalFDOGraph()
     #remoteGraph: ReadOnlyFDOGraph<PublishedLocalFDORecord> =
-        new LocalFDOGraph()
+        new PublishedFDOGraph()
     #hasResolvedRemoteGraph = false
 
     constructor(readonly mappingPID: PID) {}

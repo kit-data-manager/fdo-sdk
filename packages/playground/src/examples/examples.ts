@@ -33,7 +33,7 @@ const graph = new LocalFDOGraph()
 // A software repository with the simple software profile. Every value is
 // stored under the attribute PID the profile maps the readable name to;
 // skip() leaves an attribute out even though the profile declares it.
-const software = new ConcreteLocalFDORecord("LOCAL/software/climate-tools")
+const software = graph.newRecord("LOCAL/software/climate-tools")
 software.addProfile(SIMPLE_PROFILES.SOFTWARE, {
     softwareRepositoryType: "git",
     softwareLocation: "https://github.com/example/climate-tools",
@@ -43,7 +43,7 @@ software.addProfile(SIMPLE_PROFILES.SOFTWARE, {
 
 // A data object of the software, with the data object profile. keep()
 // keeps a value that was set on the record before the profile was applied.
-const measurements = new ConcreteLocalFDORecord(
+const measurements = graph.newRecord(
     "LOCAL/data-object/measurements",
 )
 measurements.set(SIMPLE_ATTRIBUTES.DATA_OBJECT_LICENSE, "CC-BY-4.0")
@@ -54,7 +54,7 @@ measurements.addProfile(SIMPLE_PROFILES.DATA_OBJECT, {
     createdWithSoftware: reference(software)
 })
 
-const analysis = new ConcreteLocalFDORecord("LOCAL/data-object/analysis")
+const analysis = graph.newRecord("LOCAL/data-object/analysis")
 analysis.addProfile(SIMPLE_PROFILES.DATA_OBJECT, {
     dataObjectLocation: "https://example.org/data/analysis.csv",
     dataObjectLicense: "CC-BY-4.0",
@@ -64,13 +64,13 @@ analysis.addProfile(SIMPLE_PROFILES.DATA_OBJECT, {
 
 // Records do not need a profile: the two creators of the publication are
 // plain records that only serve as reference targets for now.
-const ada = new ConcreteLocalFDORecord("LOCAL/person/ada")
-const grace = new ConcreteLocalFDORecord("LOCAL/person/grace")
+const ada = graph.newRecord("LOCAL/person/ada")
+const grace = graph.newRecord("LOCAL/person/grace")
 
 // A publication describing the data objects. Profile values can be
 // reference markers as well: publicationCreator links to the creator
 // records, and build() writes the back-references on them.
-const publication = new ConcreteLocalFDORecord(
+const publication = graph.newRecord(
     "LOCAL/publication/climate-index",
 )
 publication.addProfile(SIMPLE_PROFILES.PUBLICATION, {
@@ -97,17 +97,6 @@ publication.addProfile(SIMPLE_PROFILES.PUBLICATION, {
         )
     ]
 })
-
-for (const record of [
-    software,
-    measurements,
-    analysis,
-    ada,
-    grace,
-    publication,
-]) {
-    graph.addRecord(record)
-}
 
 // Publishing assigns a PID to every record and fixes the references up to
 // PIDs. The published graph on the right is updated as soon as the store
@@ -231,17 +220,17 @@ const backend = PlaygroundBackend.getInstance()
 
 const graph = new LocalFDOGraph()
 
-const paper = new ConcreteLocalFDORecord("LOCAL/publication/fdos-in-practice")
+const paper = graph.newRecord("LOCAL/publication/fdos-in-practice")
 paper.set(SIMPLE_ATTRIBUTES.PUBLICATION_TITLE, "FDOs in practice")
 
-const dataset = new ConcreteLocalFDORecord("LOCAL/data-object/reproducibility")
+const dataset = graph.newRecord("LOCAL/data-object/reproducibility")
 dataset.set(
     SIMPLE_ATTRIBUTES.DATA_OBJECT_LOCATION,
     "https://example.org/data/reproducibility.nc",
 )
 dataset.set(SIMPLE_ATTRIBUTES.MIME_TYPE, "application/netcdf")
 
-const author = new ConcreteLocalFDORecord("LOCAL/person/jane-doe")
+const author = graph.newRecord("LOCAL/person/jane-doe")
 author.set(SIMPLE_ATTRIBUTES.OWNER, "Helmholtz-Zentrum Hereon")
 author.set(SIMPLE_ATTRIBUTES.PUBLICATION_CREATOR, "Jane Doe")
 
@@ -254,10 +243,8 @@ paper.addReference(SIMPLE_ATTRIBUTES.PUBLICATION_CREATOR, author)
 paper.addReferenceBidi(
     SIMPLE_ATTRIBUTES.DOI,
     SIMPLE_ATTRIBUTES.DOI,
-    dataset,
+    dataset, 
 )
-
-for (const record of [paper, dataset, author]) graph.addRecord(record)
 
 await backend.publishGraph(graph)
 `,

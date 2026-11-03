@@ -21,6 +21,7 @@
         "es-module-lexer": "^1.7.0",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
+        "react-resizable-panels": "^4.15.1",
         "typescript": "^6.0.3"
     },
     "devDependencies": {

@@ -1,6 +1,14 @@
 import type { FDORecord, ReadOnlyFDORecord } from "./FDORecord.js"
 import type { LocalID, PID, RecordValue } from "../types.js"
 
+export type FDOGraphAddRecordOptions = Partial<{
+    /**
+     * If a record with the same id already exists, should it be overwritten?
+     * @default false
+     */
+    overwrite: boolean
+}>
+
 /**
  * Represents a graph of FDO records, where each node is a record and each
  * edge is a reference from one record to another.
@@ -9,10 +17,12 @@ export interface FDOGraph<
     RecordType extends FDORecord = FDORecord,
 > extends ReadOnlyFDOGraph<RecordType> {
     /**
-     * Add a new record to the graph
+     * Add a new record to the graph. If a record with the same identifier already
+     * exists, it will be silently overwritten.
      * @param record
+     * @param options Options for the add record method (e.g. `overwrite`)
      */
-    addRecord(record: FDORecord): void
+    addRecord(record: FDORecord, options?: FDOGraphAddRecordOptions): void
 
     /**
      * Remove a record in this graph by its local ID or global {@link PID}
