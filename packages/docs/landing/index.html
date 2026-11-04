@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="color-scheme" content="dark" />
+        <meta name="color-scheme" content="light dark" />
         <meta
             name="description"
             content="FDO SDK is a TypeScript SDK for creating, publishing and resolving FAIR Digital Objects."
@@ -12,80 +12,52 @@
         <link rel="stylesheet" href="./styles.css" />
     </head>
     <body>
-        <a class="skip-link" href="#main">Skip to content</a>
-
-        <header class="site-header">
-            <a class="brand" href="./">FDO <span>SDK</span></a>
-            <nav aria-label="Main">
-                <a href="./api/">API reference</a>
-                <a href="./playground/">Playground</a>
-                <a href="https://github.com/kit-data-manager/fdo-sdk">GitHub</a>
-            </nav>
-        </header>
-
-        <main id="main">
-            <section class="hero">
-                <p class="eyebrow">TypeScript · FAIR Digital Objects</p>
-                <h1>Create, publish and resolve FDO records.</h1>
-                <p class="lede">
-                    The FDO SDK models records as sets of PID-identified
-                    attributes, maps source data to records continuously, and
-                    keeps the PIDs of records that still exist stable across
-                    runs.
+        <main>
+            <header>
+                <h1>FDO SDK</h1>
+                <p class="subtitle">
+                    A TypeScript SDK for FAIR Digital Objects.
                 </p>
-                <div class="actions">
-                    <a class="button primary" href="./playground/">
-                        Open the playground
-                    </a>
-                    <a class="button" href="./api/">Browse the API</a>
-                </div>
-            </section>
+            </header>
 
-            <section class="features" aria-label="What the SDK provides">
-                <article>
-                    <h2>Records and profiles</h2>
-                    <p>
-                        Build records from PID-identified attributes, apply
-                        profiles that map readable names to PIDs, and link
-                        records with unidirectional or bidirectional references.
-                    </p>
-                </article>
-                <article>
-                    <h2>Continuous mapping</h2>
-                    <p>
-                        Describe a mapping as a pure function of your source
-                        data. Every run produces the records to create, update
-                        and delete against the previously published graph.
-                    </p>
-                </article>
-                <article>
-                    <h2>Bring your own backend</h2>
-                    <p>
-                        Publishing and resolving are interfaces. Use the
-                        in-memory testing backend for local experiments, or
-                        implement the adapters for your infrastructure.
-                    </p>
-                </article>
-            </section>
-
-            <section class="quickstart">
-                <h2>Quick start</h2>
-                <pre><code>pnpm add @fdo-sdk/primitives @fdo-sdk/mapping @fdo-sdk/simple-types</code></pre>
+            <section class="notice" role="note">
+                <h2>Internal testing — not ready for use</h2>
                 <p>
-                    Explore complete examples in the
-                    <a href="./playground/">playground</a> or read the
-                    <a href="./api/">API reference</a>.
+                    This SDK is under active development. Its API may change,
+                    and it should not be used in production.
                 </p>
             </section>
-        </main>
 
-        <footer class="site-footer">
             <p>
-                FDO SDK is open source under the Apache-2.0 license.
-                <a href="https://github.com/kit-data-manager/fdo-sdk"
-                    >View on GitHub</a
-                >.
+                The FDO SDK provides tools for creating, publishing and
+                resolving FDO records. It models records as sets of
+                PID-identified attributes, supports profiles and references
+                between records, and can map source data to FDO records
+                continuously while keeping published PIDs stable.
             </p>
-        </footer>
+
+            <nav aria-label="Site">
+                <ul>
+                    <li>
+                        <a href="./api/">Documentation</a> — the generated API
+                        reference for the SDK packages.
+                    </li>
+                    <li>
+                        <a href="./playground/">Playground</a> — run and edit
+                        the examples in the browser.
+                    </li>
+                    <li>
+                        <a href="https://github.com/kit-data-manager/fdo-sdk"
+                            >Source code</a
+                        >
+                        — the repository and issue tracker.
+                    </li>
+                </ul>
+            </nav>
+
+            <footer>
+                <p>FDO SDK is open source under the Apache-2.0 license.</p>
+            </footer>
+        </main>
     </body>
 </html>
