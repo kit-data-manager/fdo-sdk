@@ -2,7 +2,10 @@
 
 A browser playground for the SDK. It runs TypeScript examples against the
 workspace packages, shows console output and renders the published graph after
-every run. It is private and not published.
+every run. It is private and not published to npm.
+
+The playground is deployed to GitHub Pages together with the documentation:
+<https://kit-data-manager.github.io/fdo-sdk/playground/>.
 
 ## Run it
 

@@ -148,7 +148,15 @@ The API reference is generated with TypeDoc from `packages/docs`:
 pnpm --filter @fdo-sdk/docs build   # HTML in packages/docs/generated,
                                     # Markdown in packages/docs/generated-md
 pnpm --filter @fdo-sdk/docs serve   # serve the HTML locally
+pnpm build:pages                    # assemble site/ for GitHub Pages
 ```
+
+The documentation and the playground are deployed to GitHub Pages by the
+`Deploy documentation and playground` workflow on every push to `main`:
+
+- <https://kit-data-manager.github.io/fdo-sdk/> — landing page
+- <https://kit-data-manager.github.io/fdo-sdk/api/> — API reference
+- <https://kit-data-manager.github.io/fdo-sdk/playground/> — playground
 
 Each package also has a short README with its specific API:
 
@@ -180,6 +188,7 @@ Workspace commands:
 ```bash
 pnpm build           # build all packages in dependency order (nx-cached)
 pnpm test            # run the tests of all packages that define a test script
+pnpm build:pages     # build everything and assemble site/ for GitHub Pages
 pnpm build:stream    # same as build, with interleaved output
 pnpm test:stream     # same as test, with interleaved output
 

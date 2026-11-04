@@ -1,7 +1,9 @@
 {
     "$schema": "https://typedoc.org/schema.json",
+    "name": "FDO SDK API Reference",
     "entryPoints": ["src/primitives.ts", "src/mapping.ts", "src/simple-types.ts"],
     "out": "generated",
+    "readme": "none",
     "tsconfig": "./tsconfig.json",
     "excludeInternal": true,
     "externalSymbolLinkMappings": {

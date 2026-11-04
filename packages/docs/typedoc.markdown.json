@@ -1,5 +1,6 @@
 {
     "$schema": "https://typedoc.org/schema.json",
+    "name": "FDO SDK API Reference",
     "plugin": ["typedoc-plugin-markdown"],
     "entryPoints": ["src/primitives.ts", "src/mapping.ts", "src/simple-types.ts"],
     "out": "generated-md",

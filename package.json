@@ -6,6 +6,7 @@
   "main": "index.js",
   "scripts": {
     "build": "lerna run build",
+    "build:pages": "pnpm build && node scripts/build-pages.mjs",
     "build:stream": "lerna run build --stream",
     "test": "lerna run test",
     "test:stream": "lerna run test --stream"
