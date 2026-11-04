@@ -1,3 +1,5 @@
+# ⚠️ Internal Testing - not ready for use
+
 # FDO SDK
 
 A TypeScript SDK for creating, publishing and resolving **FDO Records**
