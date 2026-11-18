@@ -34,6 +34,15 @@ type ParsedBinding =
     | { kind: "named"; names: { name: string; as: string }[] }
 
 /**
+ * Blanks out a span of source while keeping its line structure intact: every
+ * character except line breaks becomes a space. Replacing the span wholesale
+ * would collapse multi-line imports and shift every following line.
+ */
+function blankOut(text: string): string {
+    return text.replace(/[^\r\n]/g, " ")
+}
+
+/**
  * Rewrites the imports of a user script so it can be executed with
  * `new Function`. Only imports from the SDK packages are allowed; they are
  * replaced by destructuring from the namespaces the sandbox injects. The
@@ -92,7 +101,7 @@ export async function transformSource(
 
         blanked =
             blanked.slice(0, entry.ss) +
-            " ".repeat(entry.se - entry.ss) +
+            blankOut(blanked.slice(entry.ss, entry.se)) +
             blanked.slice(entry.se)
     }
 

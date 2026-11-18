@@ -82,7 +82,7 @@ describe("transformSource", () => {
         ).rejects.toThrowError(/export/i)
     })
 
-    it("handles imports spread over multiple lines", async () => {
+    it("keeps line numbers when blanking multi-line imports", async () => {
         const source =
             'import {\n    keep,\n    skip,\n} from "@fdo-sdk/primitives"\nconst x = keep()'
         const result = await transformSource(source)
@@ -91,7 +91,10 @@ describe("transformSource", () => {
             "const { keep, skip } = __fdo_primitives;",
         )
         const lines = result.code.split("\n")
-        expect(lines[2]!.trim()).toBe("const x = keep()")
+        expect(lines).toHaveLength(
+            source.split("\n").length + result.preambleLines,
+        )
+        expect(lines[5]!.trim()).toBe("const x = keep()")
     })
 })
 
@@ -124,6 +127,47 @@ describe("runScript", () => {
 
         expect(outcome.error).toContain("boom")
         expect(outcome.error).toContain("line 3")
+    })
+
+    it("maps errors back past a multi-line import preamble", async () => {
+        const outcome = await runScript(
+            [
+                "import {",
+                "    keep,",
+                "    skip,",
+                '} from "@fdo-sdk/primitives"',
+                "const a = 1",
+                'throw new Error("boom")',
+            ].join("\n"),
+        )
+
+        expect(outcome.error).toContain("boom")
+        expect(outcome.error).toContain("line 6")
+    })
+
+    it("maps Firefox-style stack frames back to user source lines", async () => {
+        const outcome = await runScript(
+            [
+                "const error = new Error('boom')",
+                'error.stack = "anonymous/<@https://example.org/app.js line 129 > Function:7:5"',
+                "throw error",
+            ].join("\n"),
+        )
+
+        expect(outcome.error).toContain("boom")
+        expect(outcome.error).toContain("line 3")
+    })
+
+    it("omits the line when the stack has no location for executed code", async () => {
+        const outcome = await runScript(
+            [
+                "const error = new Error('boom')",
+                'error.stack = "anonymous@\\nglobal code@https://example.org/app.js:5:3"',
+                "throw error",
+            ].join("\n"),
+        )
+
+        expect(outcome.error).toBe("Error: boom")
     })
 
     it("reports transform errors without a stack trace", async () => {

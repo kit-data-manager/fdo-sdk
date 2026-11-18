@@ -155,16 +155,36 @@ export function describeEvent(event: StoreEvent): string {
     }
 }
 
+/**
+ * A frame of the wrapper function that `new Function` compiles, in the stack
+ * formats of the supported engines:
+ *
+ * - V8 (Chrome, Edge, Node) reports code created by `new Function` as
+ *   `<anonymous>:<line>:<column>`.
+ * - SpiderMonkey (Firefox) reports it as
+ *   `<name>@<creation site> > Function:<line>:<column>`.
+ *
+ * Safari's JavaScriptCore omits the location for `new Function` code entirely,
+ * so there is nothing to map there.
+ */
+const GENERATED_FRAME = /<anonymous>:(\d+):\d+|> Function:(\d+):\d+/
+
 function formatThrown(error: unknown, offset: number): string {
     const message =
         error instanceof Error
             ? `${error.name}: ${error.message}`
             : String(error)
     const stack = error instanceof Error ? error.stack : undefined
-    const match = stack?.match(/<anonymous>:(\d+):\d+/)
-    if (match) {
-        const line = Number(match[1]) - offset
-        if (line > 0) return `${message} (line ${line})`
+    if (stack !== undefined) {
+        // Walk the frames from innermost to outermost; the first match is the
+        // generated frame closest to the throw.
+        for (const frame of stack.split("\n")) {
+            const match = frame.match(GENERATED_FRAME)
+            if (match === null) continue
+            const line = Number(match[1] ?? match[2]) - offset
+            if (line > 0) return `${message} (line ${line})`
+            break
+        }
     }
     return message
 }
