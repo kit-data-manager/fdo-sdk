@@ -1,31 +1,31 @@
 {
-  "name": "fdo-sdk",
-  "version": "0.1.0",
-  "description": "",
-  "private": true,
-  "main": "index.js",
-  "scripts": {
-    "build": "lerna run build",
-    "build:pages": "pnpm build && node scripts/build-pages.mjs",
-    "build:stream": "lerna run build --stream",
-    "test": "lerna run test",
-    "test:stream": "lerna run test --stream"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "Apache-2.0",
-  "packageManager": "pnpm@11.18.0",
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "11.18.0",
-      "onFail": "download"
+    "name": "fdo-sdk",
+    "version": "0.1.0",
+    "description": "",
+    "private": true,
+    "main": "index.js",
+    "scripts": {
+        "build": "lerna run build",
+        "build:pages": "pnpm build && node scripts/build-pages.mjs",
+        "build:stream": "lerna run build --stream",
+        "test": "lerna run test",
+        "test:stream": "lerna run test --stream"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "Apache-2.0",
+    "packageManager": "pnpm@12.21.0",
+    "devEngines": {
+        "packageManager": {
+            "name": "pnpm",
+            "version": "12.21.0",
+            "onFail": "download"
+        }
+    },
+    "type": "module",
+    "devDependencies": {
+        "lerna": "^10.1.1",
+        "nx": "^23.3.0",
+        "prettier": "^3.9.6"
     }
-  },
-  "type": "module",
-  "devDependencies": {
-    "lerna": "^10.1.1",
-    "nx": "^23.3.0",
-    "prettier": "^3.9.6"
-  }
 }
